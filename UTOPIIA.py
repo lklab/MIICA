@@ -8,9 +8,7 @@ import shutil, pickle
 
 class UTOPIIA(QMainWindow) :
 	context = {}
-
 	project = {}
-	saved = True
 
 	def __init__(self) :
 		super().__init__()
@@ -20,39 +18,47 @@ class UTOPIIA(QMainWindow) :
 
 	def initUI(self) :
 		# setting up actions
-		newProject = QAction(QIcon('resources/sample.png'), 'New Project', self)
-		newProject.triggered.connect(self.createNewProject)
-		openProject = QAction(QIcon('resources/sample.png'), 'Open Project', self)
-		openProject.triggered.connect(self.openProjectDialog)
-		saveProject = QAction(QIcon('resources/sample.png'), 'Save Project', self)
-		saveProject.triggered.connect(self.saveProject)
+		newProjectAction = QAction(QIcon('resources/sample.png'), 'New Project', self)
+		newProjectAction.setShortcut('Ctrl+N')
+		newProjectAction.triggered.connect(self.newProject)
+		openProjectAction = QAction(QIcon('resources/sample.png'), 'Open Project...', self)
+		openProjectAction.setShortcut('Ctrl+O')
+		openProjectAction.triggered.connect(self.openProject)
+		saveProjectAction = QAction(QIcon('resources/sample.png'), 'Save Project', self)
+		saveProjectAction.setShortcut('Ctrl+S')
+		saveProjectAction.triggered.connect(self.saveProject)
+		saveProjectAsAction = QAction(QIcon('resources/sample.png'), 'Save Project As...', self)
+		saveProjectAsAction.setShortcut('Ctrl+Shift+S')
+		saveProjectAsAction.triggered.connect(self.saveProjectAs)
 
-		importUPPAAL = QAction(QIcon('resources/sample.png'), 'Import UPPAAL Project', self)
-		importUPPAAL.triggered.connect(self.importUPPAALDialog)
-		editUPPAAL = QAction(QIcon('resources/sample.png'), 'Edit UPPAAL Project', self)
-		editUPPAAL.triggered.connect(self.editUPPAAL)
+		importUPPAALAction = QAction(QIcon('resources/sample.png'), 'Import UPPAAL Project', self)
+		importUPPAALAction.triggered.connect(self.importUPPAAL)
+		editUPPAALAction = QAction(QIcon('resources/sample.png'), 'Edit UPPAAL Project', self)
+		editUPPAALAction.triggered.connect(self.editUPPAAL)
 
 		# menu
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
-		fileMenu.addAction(newProject)
-		fileMenu.addAction(openProject)
-		fileMenu.addAction(saveProject)
+		fileMenu.addAction(newProjectAction)
+		fileMenu.addAction(openProjectAction)
+		fileMenu.addAction(saveProjectAction)
+		fileMenu.addAction(saveProjectAsAction)
 
 		projectMenu = menubar.addMenu('&Project')
-		projectMenu.addAction(importUPPAAL)
-		projectMenu.addAction(editUPPAAL)
+		projectMenu.addAction(importUPPAALAction)
+		projectMenu.addAction(editUPPAALAction)
 		projectMenu.addSeparator()
 
 		# toolbar
 		fileToolbar = self.addToolBar('')
-		fileToolbar.addAction(newProject)
-		fileToolbar.addAction(openProject)
-		fileToolbar.addAction(saveProject)
+		fileToolbar.addAction(newProjectAction)
+		fileToolbar.addAction(openProjectAction)
+		fileToolbar.addAction(saveProjectAction)
+		fileToolbar.addAction(saveProjectAsAction)
 
 		projectToolbar = self.addToolBar('')
-		projectToolbar.addAction(importUPPAAL)
-		projectToolbar.addAction(editUPPAAL)
+		projectToolbar.addAction(importUPPAALAction)
+		projectToolbar.addAction(editUPPAALAction)
 
 		# status bar
 		self.statusBar().showMessage('Ready')
@@ -63,12 +69,31 @@ class UTOPIIA(QMainWindow) :
 #		self.showMaximized()
 		self.show()
 
+	# private methods
 	def initProject(self) :
 		self.setWindowTitle('UTOPIIA - Untitled Project')
-
 		self.project['path'] = None
 		self.project['name'] = 'Untitled'
 		self.project['model'] = None
+		self.project['saved'] = False
+
+	def saveProjectFile(self) :
+		if self.project['path'] :
+			self.project['saved'] = True
+			file = open(os.path.join(self.project['path'], 'project.utopiia'), 'wb')
+			pickle.dump(self.project, file)
+			file.close()
+
+	def loadProjectFile(self, path) :
+		file = open(os.path.join(path, 'project.utopiia'), 'rb')
+		self.project = pickle.load(file)
+		file.close()
+		self.setWindowTitle('UTOPIIA - ' + self.project['name'])
+
+	def saveContext(self) :
+		file = open(os.path.join('resources', 'context.data'), 'wb')
+		pickle.dump(self.context, file)
+		file.close()
 	
 	def getContext(self) :
 		try :
@@ -78,65 +103,76 @@ class UTOPIIA(QMainWindow) :
 		except :
 			self.context['uppaal'] = None
 
-	def saveContext(self) :
-		file = open(os.path.join('resources', 'context.data'), 'wb')
-		pickle.dump(self.context, file)
-		file.close()
+	# evant callbacks
+	def newProject(self) :
+		if not self.project['saved'] :
+			pass # TODO warning
+		self.initProject()
+		return True
 
-	# evant callback
-	def createNewProject(self) :
-		if self.saved :
-			self.initProject()
-			self.saved = False
+	def openProject(self) :
+		if not self.project['saved'] :
+			pass # TODO warning
 
-	def openProjectDialog(self) :
-		if self.saved :
-			fname = QFileDialog.getExistingDirectory(self, 'Open UTOPIIA Project', './')
-			if fname :
-				file = open(os.path.join(fname, 'project.utopiia'), 'rb')
-				self.project = pickle.load(file)
-				file.close()
-				self.setWindowTitle('UTOPIIA - ' + self.project['name'])
-			else :
-				pass
+		path = QFileDialog.getExistingDirectory(self, 'Open UTOPIIA Project', './')
+		if not path :
+			return False
+		self.loadProjectFile(path)
+		return True
 
 	def saveProject(self) :
-		if not self.project.get('path') :
-			fname = QFileDialog.getExistingDirectory(self, 'Save UTOPIIA Project', './')
-			if not fname :
-				return
-			self.project['path'] = fname
-			self.project['name'] = os.path.basename(fname)
-			self.setWindowTitle('UTOPIIA - ' + self.project['name'])
+		if not self.project['path'] :
+			return self.saveProjectAs()
+		self.saveProjectFile()
+		return True
 
-		file = open(os.path.join(self.project['path'], 'project.utopiia'), 'wb')
-		pickle.dump(self.project, file)
-		file.close()
-		self.saved = True
+	def saveProjectAs(self) :
+		path = QFileDialog.getExistingDirectory(self, 'Save UTOPIIA Project', './')
+		if not path :
+			return False
 
-	def importUPPAALDialog(self) :
-		fname = QFileDialog.getOpenFileName(self, 'Import UPPAAL Project', './')
-		if fname[0] :
+		self.project['path'] = path
+		self.project['name'] = os.path.basename(path)
+		self.setWindowTitle('UTOPIIA - ' + self.project['name'])
+
+		if self.project['model'] :
+			tempPath = self.project['model']
 			self.project['model'] = os.path.join(self.project['path'], 'model.xml')
-			shutil.copy(fname[0], self.project['model'])
-			self.saved = False
+			shutil.copy(tempPath, self.project['model'])
+
+		self.saveProjectFile()
+		return True
+
+	def importUPPAAL(self) :
+		if self.project['model'] :
+			pass # TODO warning
+
+		path = QFileDialog.getOpenFileName(self, 'Import UPPAAL Project', './')
+		if not path[0] :
+			return False
+
+		if not self.project['path'] :
+			self.project['model'] = os.path.join('resources', 'model.xml.temp')
 		else :
-			pass
+			self.project['model'] = os.path.join(self.project['path'], 'model.xml')
+		shutil.copy(path[0], self.project['model'])
+		self.project['saved'] = False
+		return True
 
 	def editUPPAAL(self) :
 		if not self.context['uppaal'] :
-			fname = QFileDialog.getOpenFileName(self, 'Select UPPAAL Path', './')
-			if fname[0] :
-				self.context['uppaal'] = fname[0]
-				self.saveContext()
-			else :
-				return
+			path = QFileDialog.getOpenFileName(self, 'Select UPPAAL Path', './')
+			if not path[0] :
+				return False
+			self.context['uppaal'] = path[0]
+			self.saveContext()
 
 		if not self.project['model'] :
-			self.project['model'] = os.path.join(project['path'], 'model.xml')
-			shutil.copy(os.path.join('resource', 'model.xml'), self.project['model'])
+			if not self.importUPPAAL() : # TODO select import or new mode
+				return False
 
-		os.system(self.context['uppaal'] + " " + self.project['model'] + " &")
+		os.system(self.context['uppaal'] + " " + self.project['model'] + " &") # TODO threading
+		return True
 
 if __name__ == '__main__' :
 	app = QApplication(sys.argv)

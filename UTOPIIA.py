@@ -31,10 +31,10 @@ class UTOPIIA(QMainWindow) :
 		saveProjectAsAction.setShortcut('Ctrl+Shift+S')
 		saveProjectAsAction.triggered.connect(self.saveProjectAs)
 
-		importUPPAALAction = QAction(QIcon('resources/sample.png'), 'Import UPPAAL Project', self)
-		importUPPAALAction.triggered.connect(self.importUPPAAL)
-		editUPPAALAction = QAction(QIcon('resources/sample.png'), 'Edit UPPAAL Project', self)
-		editUPPAALAction.triggered.connect(self.editUPPAAL)
+		importModelAction = QAction(QIcon('resources/sample.png'), 'Import Model', self)
+		importModelAction.triggered.connect(self.importModel)
+		editModelAction = QAction(QIcon('resources/sample.png'), 'Edit Model', self)
+		editModelAction.triggered.connect(self.editModel)
 
 		# menu
 		menubar = self.menuBar()
@@ -45,8 +45,8 @@ class UTOPIIA(QMainWindow) :
 		fileMenu.addAction(saveProjectAsAction)
 
 		projectMenu = menubar.addMenu('&Project')
-		projectMenu.addAction(importUPPAALAction)
-		projectMenu.addAction(editUPPAALAction)
+		projectMenu.addAction(importModelAction)
+		projectMenu.addAction(editModelAction)
 		projectMenu.addSeparator()
 
 		# toolbar
@@ -57,8 +57,8 @@ class UTOPIIA(QMainWindow) :
 		fileToolbar.addAction(saveProjectAsAction)
 
 		projectToolbar = self.addToolBar('')
-		projectToolbar.addAction(importUPPAALAction)
-		projectToolbar.addAction(editUPPAALAction)
+		projectToolbar.addAction(importModelAction)
+		projectToolbar.addAction(editModelAction)
 
 		# status bar
 		self.statusBar().showMessage('Ready')
@@ -88,6 +88,9 @@ class UTOPIIA(QMainWindow) :
 		file = open(os.path.join(path, 'project.utopiia'), 'rb')
 		self.project = pickle.load(file)
 		file.close()
+
+		self.project['path'] = path
+		self.project['model'] = os.path.join(path, 'model.xml')
 		self.setWindowTitle('UTOPIIA - ' + self.project['name'])
 
 	def saveContext(self) :
@@ -143,11 +146,11 @@ class UTOPIIA(QMainWindow) :
 		self.saveProjectFile()
 		return True
 
-	def importUPPAAL(self) :
+	def importModel(self) :
 		if self.project['model'] :
 			pass # TODO warning
 
-		path = QFileDialog.getOpenFileName(self, 'Import UPPAAL Project', './')
+		path = QFileDialog.getOpenFileName(self, 'Import UPPAAL Model', './')
 		if not path[0] :
 			return False
 
@@ -159,7 +162,7 @@ class UTOPIIA(QMainWindow) :
 		self.project['saved'] = False
 		return True
 
-	def editUPPAAL(self) :
+	def editModel(self) :
 		if not self.context['uppaal'] :
 			path = QFileDialog.getOpenFileName(self, 'Select UPPAAL Path', './')
 			if not path[0] :
@@ -168,7 +171,7 @@ class UTOPIIA(QMainWindow) :
 			self.saveContext()
 
 		if not self.project['model'] :
-			if not self.importUPPAAL() : # TODO select import or new mode
+			if not self.importModel() : # TODO select import or new mode
 				return False
 
 		os.system(self.context['uppaal'] + " " + self.project['model'] + " &") # TODO threading

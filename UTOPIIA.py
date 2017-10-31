@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QTextEdit, QAction, QFileDialog, QApplication)
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
+	QFileDialog, QApplication, QSplitter, QTreeView, QTextEdit)
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 
@@ -83,14 +84,32 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(importModelAction)
 		projectToolbar.addAction(editModelAction)
 
-		# status bar
-		self.statusBar().showMessage("Ready")
+		# editors
+		projectExplorer = QTreeView()
+		editor = QTextEdit()
+		console = QTextEdit()
+		rightView = QWidget()
+
+		# layout
+		verticalSplitter = QSplitter(QtCore.Qt.Vertical, rightView)
+		horizontalSplitter = QSplitter(self)
+
+		verticalSplitter.addWidget(editor)
+		verticalSplitter.addWidget(console)
+
+		horizontalSplitter.addWidget(projectExplorer)
+		horizontalSplitter.addWidget(verticalSplitter)
+
+		verticalSplitter.setStretchFactor(0, 1)
+		horizontalSplitter.setStretchFactor(1, 1)
+
+		self.setCentralWidget(horizontalSplitter)
 
 		# setting up window
 		self.setWindowTitle("UTOPIIA - Untitled Project")
 		self.setGeometry(0, 0, 960, 540)
-#		self.showMaximized()
-		self.show()
+		self.showMaximized()
+#		self.show()
 
 	# private methods
 	def getContext(self) :

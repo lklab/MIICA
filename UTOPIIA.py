@@ -2,6 +2,7 @@
 
 from PyQt5.QtWidgets import (QMainWindow, QMessageBox, QTextEdit, QAction, QFileDialog, QApplication)
 from PyQt5.QtGui import QIcon
+from PyQt5 import QtCore
 
 import sys, os
 import shutil, pickle
@@ -29,11 +30,13 @@ CORRECT_MODEL_4_0 = \
 class UTOPIIA(QMainWindow) :
 	context = {}
 	project = {}
+	status = {}
 
 	def __init__(self) :
 		super().__init__()
 		self.getContext()
 		self.initProject()
+		self.initStatus()
 		self.initUI()
 
 	def initUI(self) :
@@ -90,12 +93,28 @@ class UTOPIIA(QMainWindow) :
 		self.show()
 
 	# private methods
+	def getContext(self) :
+		try :
+			file = open(os.path.join("resources", "context.data"), "rb")
+			self.context = pickle.load(file)
+			file.close()
+		except :
+			self.context["uppaal"] = None
+
 	def initProject(self) :
 		self.setWindowTitle("UTOPIIA - Untitled Project")
 		self.project["path"] = None
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
 		self.project["saved"] = True
+
+	def initStatus(self) :
+		self.status["running uppaal"] = False
+
+	def saveContext(self) :
+		file = open(os.path.join("resources", "context.data"), "wb")
+		pickle.dump(self.context, file)
+		file.close()
 
 	def saveProjectFile(self) :
 		if self.project["path"] :
@@ -110,21 +129,17 @@ class UTOPIIA(QMainWindow) :
 		file.close()
 
 		self.project["path"] = path
-		self.project["model"] = os.path.join(path, "model.xml")
+		if self.project["model"] :
+			self.project["model"] = os.path.join(path, "model.xml")
 		self.setWindowTitle("UTOPIIA - " + self.project["name"])
 
-	def saveContext(self) :
-		file = open(os.path.join("resources", "context.data"), "wb")
-		pickle.dump(self.context, file)
-		file.close()
-	
-	def getContext(self) :
-		try :
-			file = open(os.path.join("resources", "context.data"), "rb")
-			self.context = pickle.load(file)
-			file.close()
-		except :
-			self.context["uppaal"] = None
+	def importModelToProject(self, path) :
+		if not self.project["path"] :
+			self.project["model"] = os.path.join("resources", "model.xml.temp")
+		else :
+			self.project["model"] = os.path.join(self.project["path"], "model.xml")
+		shutil.copy(path, self.project["model"])
+		self.project["saved"] = False
 
 	def checkUPPAALfile(self, path) :
 		try :
@@ -177,21 +192,49 @@ class UTOPIIA(QMainWindow) :
 		else :
 			return False
 
+	def newModelMessage(self) :
+		reply = QMessageBox.question(self, "Imported Model is not exist", \
+			"There are no imported models in the current project.\nCreate a new model?", \
+			QMessageBox.Ok | QMessageBox.No, QMessageBox.Ok)
+		if reply == QMessageBox.Ok :
+			return True
+		else :
+			return False
+
+	def informationMessage(self, message) :
+		QMessageBox.information(self, "Information", message)
+
 	def errorMessage(self, message) :
-		reply = QMessageBox.critical(self, "Error", message)
+		QMessageBox.critical(self, "Error", message)
 
 	# event callbacks
 	def closeEvent(self, event) :
+		if self.status["running uppaal"] :
+			self.informationMessage("Quit UPPAAL first.")
+			event.ignore()
+			return
+
 		if not self.project["saved"] :
 			if self.notSavedMessage(QMessageBox.Discard) :
 				event.accept()
+				return
 			else :
 				event.ignore()
+				return
 		else :
 			event.accept()
+			return
+
+	# signal handlers
+	def uppaalTerminated(self, exitValue) :
+		self.status["running uppaal"] = False
 
 	# button callbacks
 	def newProject(self) :
+		if self.status["running uppaal"] :
+			self.informationMessage("Quit UPPAAL first.")
+			return False
+
 		if not self.project["saved"] :
 			if not self.notSavedMessage(QMessageBox.No) :
 				return False
@@ -199,6 +242,10 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def openProject(self) :
+		if self.status["running uppaal"] :
+			self.informationMessage("Quit UPPAAL first.")
+			return False
+
 		if not self.project["saved"] :
 			if not self.notSavedMessage(QMessageBox.No) :
 				return False
@@ -216,6 +263,10 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def saveProjectAs(self) :
+		if self.status["running uppaal"] :
+			self.informationMessage("Quit UPPAAL first.")
+			return False
+
 		path = QFileDialog.getExistingDirectory(self, "Save UTOPIIA Project", "./")
 		if not path :
 			return False
@@ -233,6 +284,10 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def importModel(self) :
+		if self.status["running uppaal"] :
+			self.informationMessage("Quit UPPAAL first.")
+			return False
+
 		if self.project["model"] :
 			if not self.overwriteModelMessage() :
 				return False
@@ -241,18 +296,17 @@ class UTOPIIA(QMainWindow) :
 		if not path[0] :
 			return False
 		if not self.checkModelfile(path[0]) :
-			self.errorMessage("%s\nInvalid UPPAAL Model File."%path[0])
+			self.errorMessage("%s\n\nInvalid UPPAAL Model File."%path[0])
 			return False
 
-		if not self.project["path"] :
-			self.project["model"] = os.path.join("resources", "model.xml.temp")
-		else :
-			self.project["model"] = os.path.join(self.project["path"], "model.xml")
-		shutil.copy(path[0], self.project["model"])
-		self.project["saved"] = False
+		self.importModelToProject(path[0])
 		return True
 
 	def editModel(self) :
+		if self.status["running uppaal"] :
+			self.informationMessage("UPPAAL is already running.")
+			return False
+
 		if not self.context["uppaal"] or not self.checkUPPAALfile(self.context["uppaal"]) :
 			self.context["uppaal"] = None
 			self.saveContext()
@@ -265,19 +319,37 @@ class UTOPIIA(QMainWindow) :
 			self.saveContext()
 
 		if not self.checkUPPAALfile(self.context["uppaal"]) :
-			self.errorMessage("%s\nInvalid UPPAAL Executable."%self.context["uppaal"])
+			self.errorMessage("%s\n\nInvalid UPPAAL Executable."%self.context["uppaal"])
 			self.context["uppaal"] = None
 			self.saveContext()
 			return False
 
 		if not self.project["model"] :
-			if not self.importModel() : # TODO select import or new mode
+			if self.newModelMessage() :
+				self.importModelToProject(os.path.join("resources", "model.xml"))
+			else :
 				return False
 
-		os.system(self.context["uppaal"] + " " + self.project["model"] + " &") # TODO threading
+		self.status["running uppaal"] = True
+		uppaalWorker = UPPAALThread(self)
+		uppaalWorker.start()
 		return True
+
+# worker threads
+class UPPAALThread(QtCore.QThread) :
+	utopiia = None
+	signal = QtCore.pyqtSignal(int)
+
+	def __init__(self, parent) :
+		super().__init__(parent)
+		self.utopiia = parent
+		self.signal.connect(parent.uppaalTerminated)
+
+	def run(self) :
+		exitValue = os.system(self.utopiia.context["uppaal"] + " " + self.utopiia.project["model"])
+		self.signal.emit(exitValue)
 
 if __name__ == "__main__" :
 	app = QApplication(sys.argv)
-	ex = UTOPIIA()
+	utopiia = UTOPIIA()
 	sys.exit(app.exec_())

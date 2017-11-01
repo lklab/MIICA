@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
-	QFileDialog, QApplication, QSplitter, QTreeView, QTextEdit)
-from PyQt5.QtGui import QIcon
+	QFileDialog, QApplication, QSplitter, QTreeView, QTextEdit, QAbstractItemView)
+from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5 import QtCore
 
 import sys, os
@@ -85,10 +85,20 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(editModelAction)
 
 		# editors
-		projectExplorer = QTreeView()
+		self.projectExplorer = QTreeView()
 		editor = QTextEdit()
 		console = QTextEdit()
 		rightView = QWidget()
+
+		# Project Explorer
+		data = [("Alice", [("Keys", []),("Purse", [("Cellphone", [])])]),("Bob", [("Wallet", [("Credit card", []),("Money", [])])])]
+
+		self.model = QStandardItemModel()
+		self.addItems(self.model, data)
+		self.projectExplorer.setModel(self.model)
+		self.projectExplorer.setEditTriggers(QAbstractItemView.NoEditTriggers)
+		self.projectExplorer.doubleClicked.connect(self.double)
+		self.model.setHorizontalHeaderLabels([""])
 
 		# layout
 		verticalSplitter = QSplitter(QtCore.Qt.Vertical, rightView)
@@ -97,7 +107,7 @@ class UTOPIIA(QMainWindow) :
 		verticalSplitter.addWidget(editor)
 		verticalSplitter.addWidget(console)
 
-		horizontalSplitter.addWidget(projectExplorer)
+		horizontalSplitter.addWidget(self.projectExplorer)
 		horizontalSplitter.addWidget(verticalSplitter)
 
 		verticalSplitter.setStretchFactor(0, 1)
@@ -110,6 +120,20 @@ class UTOPIIA(QMainWindow) :
 		self.setGeometry(0, 0, 960, 540)
 		self.showMaximized()
 #		self.show()
+
+	def addItems(self, parent, elements) :
+		_i = 0
+		for text, children in elements:
+			item = QStandardItem(QIcon("resources/sample.png"), text)
+			item.setData(str(_i))
+			_i = _i + 1
+			parent.appendRow(item)
+			if children:
+				self.addItems(item, children)
+
+	def double(self, index) :
+		_item = self.model.itemFromIndex(index)
+		print(_item.text() + _item.data())
 
 	# private methods
 	def getContext(self) :

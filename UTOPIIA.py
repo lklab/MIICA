@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
-	QFileDialog, QApplication, QSplitter, QTreeView, QTextEdit, QAbstractItemView)
-from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
+	QFileDialog, QApplication, QSplitter, QTextEdit)
+from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 
 import sys, os
 import shutil, pickle
+
+from ProjectExplorer import *
 
 CORRECT_UPPAAL_4_1 = """#!/usr/bin/env bash
 
@@ -35,10 +37,10 @@ class UTOPIIA(QMainWindow) :
 
 	def __init__(self) :
 		super().__init__()
+		self.initUI()
 		self.getContext()
 		self.initProject()
 		self.initStatus()
-		self.initUI()
 
 	def initUI(self) :
 		# setting up actions
@@ -85,20 +87,10 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(editModelAction)
 
 		# editors
-		self.projectExplorer = QTreeView()
+		self.projectExplorer = ProjectExplorer()
 		editor = QTextEdit()
 		console = QTextEdit()
 		rightView = QWidget()
-
-		# Project Explorer
-		data = [("Alice", [("Keys", []),("Purse", [("Cellphone", [])])]),("Bob", [("Wallet", [("Credit card", []),("Money", [])])])]
-
-		self.model = QStandardItemModel()
-		self.addItems(self.model, data)
-		self.projectExplorer.setModel(self.model)
-		self.projectExplorer.setEditTriggers(QAbstractItemView.NoEditTriggers)
-		self.projectExplorer.doubleClicked.connect(self.double)
-		self.model.setHorizontalHeaderLabels([""])
 
 		# layout
 		verticalSplitter = QSplitter(QtCore.Qt.Vertical, rightView)
@@ -121,20 +113,6 @@ class UTOPIIA(QMainWindow) :
 		self.showMaximized()
 #		self.show()
 
-	def addItems(self, parent, elements) :
-		_i = 0
-		for text, children in elements:
-			item = QStandardItem(QIcon("resources/sample.png"), text)
-			item.setData(str(_i))
-			_i = _i + 1
-			parent.appendRow(item)
-			if children:
-				self.addItems(item, children)
-
-	def double(self, index) :
-		_item = self.model.itemFromIndex(index)
-		print(_item.text() + _item.data())
-
 	# private methods
 	def getContext(self) :
 		try :
@@ -150,6 +128,7 @@ class UTOPIIA(QMainWindow) :
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
 		self.project["saved"] = True
+		self.projectExplorer.setProject(self.project["name"])
 
 	def initStatus(self) :
 		self.status["running uppaal"] = False
@@ -167,14 +146,24 @@ class UTOPIIA(QMainWindow) :
 			file.close()
 
 	def loadProjectFile(self, path) :
-		file = open(os.path.join(path, "project.utopiia"), "rb")
-		self.project = pickle.load(file)
-		file.close()
+		try :
+			file = open(os.path.join(path, "project.utopiia"), "rb")
+			_project = pickle.load(file)
+			file.close()
 
-		self.project["path"] = path
+			_project["path"] = path
+			if _project["model"] :
+				_project["model"] = os.path.join(path, "model.xml")
+			self.setWindowTitle("UTOPIIA - " + _project["name"])
+		except :
+			self.errorMessage("%s\n\nInvalid Project File."%path)
+			return False
+
+		self.project = _project
+		self.projectExplorer.setProject(self.project["name"])
 		if self.project["model"] :
-			self.project["model"] = os.path.join(path, "model.xml")
-		self.setWindowTitle("UTOPIIA - " + self.project["name"])
+			self.projectExplorer.setModelItem(self.editModel)
+		return True
 
 	def importModelToProject(self, path) :
 		if not self.project["path"] :
@@ -182,6 +171,7 @@ class UTOPIIA(QMainWindow) :
 		else :
 			self.project["model"] = os.path.join(self.project["path"], "model.xml")
 		shutil.copy(path, self.project["model"])
+		self.projectExplorer.setModelItem(self.editModel)
 		self.project["saved"] = False
 
 	def checkUPPAALfile(self, path) :
@@ -296,7 +286,10 @@ class UTOPIIA(QMainWindow) :
 		path = QFileDialog.getExistingDirectory(self, "Open UTOPIIA Project", "./")
 		if not path :
 			return False
-		self.loadProjectFile(path)
+
+		if not self.loadProjectFile(path) :
+			return False
+
 		return True
 
 	def saveProject(self) :

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
-	QFileDialog, QApplication, QSplitter, QTextEdit, QPushButton)
+	QFileDialog, QApplication, QSplitter, QTextEdit, QTabWidget)
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import QSize
 from PyQt5 import QtCore
@@ -10,6 +10,7 @@ import sys, os
 import shutil, pickle
 
 from ProjectExplorer import *
+from ConfigurationEditor import *
 
 CORRECT_UPPAAL_4_1 = """#!/usr/bin/env bash
 
@@ -87,20 +88,25 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(importModelAction)
 		projectToolbar.addAction(editModelAction)
 
+		# editor area
+		self.editorArea = QTabWidget()
+		self.editorArea.setTabsClosable(True)
+		self.editorArea.setMovable(True)
+		self.editorArea.tabCloseRequested.connect(self.closeEditor)
+
 		# editors
-		_icon = QIcon("resources/sample.png")
 		self.projectExplorer = ProjectExplorer()
-		editor = QPushButton()
-		editor.setIcon(_icon)
-		editor.setIconSize(QSize(500, 500))
+		self.configurationEditor = ConfigurationEditor()
 		console = QTextEdit()
-		rightView = QWidget()
+
+		# for test
+		self.editorArea.addTab(self.configurationEditor, "Configuration Editor")
 
 		# layout
-		verticalSplitter = QSplitter(QtCore.Qt.Vertical, rightView)
-		horizontalSplitter = QSplitter(self)
+		verticalSplitter = QSplitter(QtCore.Qt.Vertical)
+		horizontalSplitter = QSplitter()
 
-		verticalSplitter.addWidget(editor)
+		verticalSplitter.addWidget(self.editorArea)
 		verticalSplitter.addWidget(console)
 
 		horizontalSplitter.addWidget(self.projectExplorer)
@@ -164,9 +170,7 @@ class UTOPIIA(QMainWindow) :
 			return False
 
 		self.project = _project
-		self.projectExplorer.setProject(self.project["name"])
-		if self.project["model"] :
-			self.projectExplorer.setModelItem(self.editModel)
+		self.resetProjectExplorer()
 		return True
 
 	def importModelToProject(self, path) :
@@ -175,7 +179,7 @@ class UTOPIIA(QMainWindow) :
 		else :
 			self.project["model"] = os.path.join(self.project["path"], "model.xml")
 		shutil.copy(path, self.project["model"])
-		self.projectExplorer.setModelItem(self.editModel)
+		self.projectExplorer.setModelItem("Model.xml", self.editModel)
 		self.project["saved"] = False
 
 	def checkUPPAALfile(self, path) :
@@ -209,6 +213,11 @@ class UTOPIIA(QMainWindow) :
 				return False
 		except :
 			return False
+
+	def resetProjectExplorer(self) :
+		self.projectExplorer.setProject(self.project["name"])
+		if self.project["model"] :
+			self.projectExplorer.setModelItem("Model.xml", self.editModel)
 
 	# message box
 	def notSavedMessage(self, ignoreButton) :
@@ -321,6 +330,7 @@ class UTOPIIA(QMainWindow) :
 			shutil.copy(tempPath, self.project["model"])
 
 		self.saveProjectFile()
+		self.resetProjectExplorer()
 		return True
 
 	def importModel(self) :
@@ -374,6 +384,11 @@ class UTOPIIA(QMainWindow) :
 		uppaalWorker = UPPAALThread(self)
 		uppaalWorker.start()
 		return True
+
+	def closeEditor(self, index) :
+#		print(str(index))
+#		print(self.editorArea.tabText(index))
+		self.editorArea.removeTab(index)
 
 # worker threads
 class UPPAALThread(QtCore.QThread) :

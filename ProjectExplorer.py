@@ -3,14 +3,14 @@ from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 
 class ProjectExplorer(QTreeView) :
 	def __init__(self) :
-		QTreeView.__init__(self)
+		super().__init__()
 		self.clear()
 		self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 		self.setExpandsOnDoubleClick(False)
 		self.doubleClicked.connect(self.doubleClickHandler)
 
 	# private mathods
-	def addItem(self, name, icon, callback) :
+	def addItem(self, icon, name, callback) :
 		item = QStandardItem(icon, name)
 		item.setData(callback)
 		self.rootItem.appendRow(item)
@@ -38,17 +38,19 @@ class ProjectExplorer(QTreeView) :
 		self.setModel(self.projectItemModel)
 		self.setExpanded(index, True)
 
-	def setModelItem(self, callback) :
+	def setModelItem(self, name, callback) :
 		if self.modelItem :
+			self.modelItem.setText(name)
 			self.modelItem.setData(callback)
 		else :
-			self.modelItem = self.addItem("Model.xml", QIcon("resources/sample.png"), callback)
+			self.modelItem = self.addItem(QIcon("resources/sample.png"), name, callback)
 
-	def setSystemConfigurationItem(self, callback) :
+	def setSystemConfigurationItem(self, name, callback) :
 		if self.configurationItem :
+			self.configurationItem.setText(name)
 			self.configurationItem.setData(callback)
 		else :
-			self.configurationItem = self.addItem("Configuration.xml", QIcon("resources/sample.png"), callback)
+			self.configurationItem = self.addItem(QIcon("resources/sample.png"), name, callback)
 
 	def doubleClickHandler(self, index) :
 		item = self.projectItemModel.itemFromIndex(index)

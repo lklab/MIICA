@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
-	QFileDialog, QApplication, QSplitter, QTextEdit)
-from PyQt5.QtGui import QIcon
+	QFileDialog, QApplication, QSplitter, QTextEdit, QPushButton)
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import QSize
 from PyQt5 import QtCore
 
 import sys, os
@@ -87,8 +88,11 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(editModelAction)
 
 		# editors
+		_icon = QIcon("resources/sample.png")
 		self.projectExplorer = ProjectExplorer()
-		editor = QTextEdit()
+		editor = QPushButton()
+		editor.setIcon(_icon)
+		editor.setIconSize(QSize(500, 500))
 		console = QTextEdit()
 		rightView = QWidget()
 

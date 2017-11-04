@@ -1,5 +1,68 @@
-from PyQt5.QtWidgets import QWidget, QLayout, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QComboBox, QScrollArea
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QLayout, QVBoxLayout,
+	QHBoxLayout, QGridLayout, QListWidget, QListWidgetItem, QLabel,
+	QComboBox, QAction)
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+
+class TaskConfigurationItem(QWidget) :
+	def __init__(self) :
+		super().__init__()
+
+		# widget
+		self.taskSelect = QComboBox()
+		self.taskSelect.addItem("Task 1")
+		self.taskSelect.addItem("Task 2")
+		self.taskSelect.addItem("Task 3")
+		self.taskSelect.currentIndexChanged.connect(self.changed)
+
+		# layout
+		mainLayout = QHBoxLayout(self)
+		mainLayout.addWidget(QLabel("Task :"))
+		mainLayout.addWidget(self.taskSelect)
+
+	def getData(self) :
+		return self.taskSelect.currentText()
+
+	def changed(self, index) :
+		pass
+		
+class ConfigurationList(QMainWindow) :
+	def __init__(self, ItemWidget) :
+		super().__init__()
+		self.ItemWidget = ItemWidget
+
+		# actions
+		insertAction = QAction(QIcon("resources/sample.png"), "Insert", self)
+		insertAction.triggered.connect(self.insertItem)
+		removeAction = QAction(QIcon("resources/sample.png"), "Remove", self)
+		removeAction.triggered.connect(self.removeItem)
+
+		# layout
+		self.listLayout = QListWidget()
+
+		# toolbar
+		toolbar = self.addToolBar("")
+		toolbar.addAction(insertAction)
+		toolbar.addAction(removeAction)
+
+		self.setCentralWidget(self.listLayout)
+
+	def insertItem(self) :
+		item = QListWidgetItem(self.listLayout)
+		self.listLayout.addItem(item)
+		itemWidget = self.ItemWidget()
+		item.setSizeHint(itemWidget.sizeHint())
+		self.listLayout.setItemWidget(item, itemWidget)
+
+	def removeItem(self) :
+		for item in self.listLayout.selectedItems() :
+			self.listLayout.takeItem(self.listLayout.row(item))
+
+	def getData(self) :
+		data = []
+		for index in range(self.listLayout.count()) :
+			item = self.listLayout.item(index)
+			data.append(self.listLayout.itemWidget(item).getData())
 
 class ConfigurationEditor(QWidget) :
 	def __init__(self) :
@@ -15,7 +78,6 @@ class ConfigurationEditor(QWidget) :
 
 		mainLayout.setAlignment(platformLayout, Qt.AlignTop | Qt.AlignHCenter)
 		mainLayout.setAlignment(configurationLayout, Qt.AlignTop | Qt.AlignHCenter)
-#		mainLayout.setSizeConstraint(QLayout.SetFixedSize)
 
 		# platform editor
 		self.platformSelect = QComboBox()
@@ -42,7 +104,10 @@ class ConfigurationEditor(QWidget) :
 		platformLayout.setSizeConstraint(QLayout.SetFixedSize)
 
 		# configurations
-		self.lScroll = QScrollArea()
-		self.rScroll = QScrollArea()
-		configurationLayout.addWidget(self.lScroll)
-		configurationLayout.addWidget(self.rScroll)
+		self.taskConfiguration = ConfigurationList(TaskConfigurationItem)
+		self.ioConfiguration = ConfigurationList(TaskConfigurationItem)
+		configurationLayout.addWidget(self.taskConfiguration)
+		configurationLayout.addWidget(self.ioConfiguration)
+
+	def checkSaved(self) :
+		pass

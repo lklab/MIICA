@@ -2,7 +2,7 @@
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
 	QFileDialog, QApplication, QSplitter, QTextEdit, QTabWidget)
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
 from PyQt5 import QtCore
 

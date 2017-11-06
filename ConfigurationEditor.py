@@ -136,6 +136,7 @@ class ConfigurationList(QMainWindow) :
 	def insertItem(self) :
 		if not self.dataList :
 			self.errorMessage("There is no model file.")
+			return None
 
 		item = QListWidgetItem(self.listLayout)
 		self.listLayout.addItem(item)
@@ -156,7 +157,8 @@ class ConfigurationList(QMainWindow) :
 		self.dataList = dataList
 		for config in configList :
 			itemWidget = self.insertItem()
-			itemWidget.setData(config)
+			if itemWidget :
+				itemWidget.setData(config)
 		self.saved = True
 
 	def refresh(self, dataList) :
@@ -228,19 +230,23 @@ class ConfigurationEditor(QMainWindow) :
 		self.networkSelect = QComboBox()
 		self.networkSelect.setCurrentIndex(-1)
 		self.networkSelect.currentIndexChanged.connect(self.networkSelected)
+		self.periodEdit = QLineEdit()
 
 		platformLayout.addWidget(QLabel("Platform"), 1, 1)
 		platformLayout.addWidget(QLabel("Operating System"), 1, 2)
 		platformLayout.addWidget(QLabel("Network Library"), 1, 3)
+		platformLayout.addWidget(QLabel("Control Period(ns)"), 1, 4)
 		platformLayout.addWidget(self.platformSelect, 2, 1)
 		platformLayout.addWidget(self.osSelect, 2, 2)
 		platformLayout.addWidget(self.networkSelect, 2, 3)
+		platformLayout.addWidget(self.periodEdit, 2, 4)
 
 		platformLayout.setContentsMargins(10, 10, 10, 10)
 		platformLayout.setHorizontalSpacing(20)
 		platformLayout.setColumnMinimumWidth(1, 150)
 		platformLayout.setColumnMinimumWidth(2, 150)
 		platformLayout.setColumnMinimumWidth(3, 150)
+		platformLayout.setColumnMinimumWidth(4, 150)
 		platformLayout.setSizeConstraint(QLayout.SetFixedSize)
 
 		# configurations
@@ -302,6 +308,8 @@ class ConfigurationEditor(QMainWindow) :
 			if index != -1 and self.configurationData.get("network") :
 				index = self.networkSelect.findText(self.configurationData["network"])
 				self.networkSelect.setCurrentIndex(index)
+			if self.configurationData.get("period") :
+				self.periodEdit.setText(self.configurationData["period"])
 
 		try :
 			self.model = UppaalProjectParser.parseUppaalProject(self.modelPath)
@@ -344,6 +352,7 @@ class ConfigurationEditor(QMainWindow) :
 		configurationData["platform"] = self.platformSelect.currentText()
 		configurationData["os"] = self.osSelect.currentText()
 		configurationData["network"] = self.networkSelect.currentText()
+		configurationData["period"] = self.periodEdit.text()
 		configurationData["taskList"] = self.taskConfiguration.getData()
 		configurationData["ioList"] = self.ioConfiguration.getData()
 

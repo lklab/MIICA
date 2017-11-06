@@ -11,6 +11,8 @@ import shutil, pickle
 
 from ProjectExplorer import *
 from ConfigurationEditor import *
+import UppaalProjectParser
+import CodeGenerator
 
 CORRECT_UPPAAL_4_1 = """#!/usr/bin/env bash
 
@@ -68,6 +70,9 @@ class UTOPIIA(QMainWindow) :
 		systemConfigurationAction = QAction(QIcon("resources/sample.png"), "System Configuration", self)
 		systemConfigurationAction.triggered.connect(self.systemConfiguration)
 
+		generateAction = QAction(QIcon("resources/sample.png"), "Generate Application", self)
+		generateAction.triggered.connect(self.generateApplication)
+
 		# menu
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu("&File")
@@ -81,6 +86,8 @@ class UTOPIIA(QMainWindow) :
 		projectMenu.addAction(editModelAction)
 		projectMenu.addSeparator()
 		projectMenu.addAction(systemConfigurationAction)
+		projectMenu.addSeparator()
+		projectMenu.addAction(generateAction)
 
 		# toolbar
 		fileToolbar = self.addToolBar("")
@@ -93,6 +100,7 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(importModelAction)
 		projectToolbar.addAction(editModelAction)
 		projectToolbar.addAction(systemConfigurationAction)
+		projectToolbar.addAction(generateAction)
 
 		# editor area
 		self.editorArea = QTabWidget()
@@ -102,14 +110,15 @@ class UTOPIIA(QMainWindow) :
 
 		# editors
 		self.projectExplorer = ProjectExplorer()
-		console = QTextEdit()
+		self.console = QTextEdit()
+		self.console.setReadOnly(True)
 
 		# layout
 		verticalSplitter = QSplitter(QtCore.Qt.Vertical)
 		horizontalSplitter = QSplitter()
 
 		verticalSplitter.addWidget(self.editorArea)
-		verticalSplitter.addWidget(console)
+		verticalSplitter.addWidget(self.console)
 
 		horizontalSplitter.addWidget(self.projectExplorer)
 		horizontalSplitter.addWidget(verticalSplitter)
@@ -123,7 +132,6 @@ class UTOPIIA(QMainWindow) :
 		self.setWindowTitle("UTOPIIA - Untitled Project")
 		self.setGeometry(0, 0, 960, 540)
 		self.showMaximized()
-#		self.show()
 
 	# private methods
 	def getContext(self) :
@@ -141,11 +149,14 @@ class UTOPIIA(QMainWindow) :
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
 		self.project["config"] = None
+		self.project["build"] = None
 		self.project["saved"] = True
 		self.projectExplorer.setProject(self.project["name"])
+		self.closeAllTabs()
 
 	def initStatus(self) :
 		self.status["running uppaal"] = False
+		self.status["generating"] = False
 		self.configurationEditor = None
 
 	def saveContext(self) :
@@ -186,6 +197,7 @@ class UTOPIIA(QMainWindow) :
 
 		self.project = _project
 		self.resetProjectExplorer()
+		self.closeAllTabs()
 		return True
 
 	def importModelToProject(self, path) :
@@ -236,6 +248,11 @@ class UTOPIIA(QMainWindow) :
 			self.projectExplorer.setModelItem("Model.xml", self.editModel)
 		if self.project["config"] :
 			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
+
+	def closeAllTabs(self) :
+		for count in range(self.editorArea.count()) :
+			self.editorArea.removeTab(0)
+		self.configurationEditor = None
 
 	# message box
 	def notSavedMessage(self, ignoreButton) :
@@ -292,6 +309,14 @@ class UTOPIIA(QMainWindow) :
 	# signal handlers
 	def uppaalTerminated(self, exitValue) :
 		self.status["running uppaal"] = False
+
+	def generationTerminated(self, exitValue) :
+		self.printConsole("Build Finished.\n")
+		self.status["generating"] = False
+
+	def printConsole(self, data) :
+		self.console.setPlainText(self.console.toPlainText() + data)
+		self.console.verticalScrollBar().setValue(self.console.verticalScrollBar().maximum())
 
 	# button callbacks
 	def newProject(self) :
@@ -417,6 +442,96 @@ class UTOPIIA(QMainWindow) :
 		else :
 			self.editorArea.setCurrentWidget(self.configurationEditor)
 
+	def generateApplication(self) :
+		if self.status["generating"] :
+			return
+
+		if not self.project["model"] :
+			self.errorMessage("There is no model file.")
+			return
+		if not self.project["config"] :
+			self.errorMessage("There is no system configuration file.")
+			return
+
+		try :
+			model = UppaalProjectParser.parseUppaalProject(self.project["model"])
+			file = open(self.project["config"], "rb")
+			sysconfig = pickle.load(file)
+			file.close()
+		except :
+			self.errorMessage("Fail to read model and system configuration file.")
+			return
+
+		modelCode = None
+		headerCode = None
+		(modelCode, headerCode) = CodeGenerator.generateCode(model, sysconfig)
+
+		if not modelCode or not headerCode :
+			self.errorMessage("Fail to generate code.")
+			return
+
+		if not self.project["build"] :
+			self.project["build"] = os.path.join(self.project["path"], "build")
+
+		if not os.path.isdir(self.project["build"]) :
+			os.mkdir(self.project["build"])
+
+		modelPath = os.path.join(self.project["build"], "model.c")
+		headerPath = os.path.join(self.project["build"], "model.h")
+
+		modelSourceFile = open(modelPath, 'w')
+		modelHeaderFile = open(headerPath, 'w')
+		modelSourceFile.write(modelCode)
+		modelHeaderFile.write(headerCode)
+		modelSourceFile.close()
+		modelHeaderFile.close()
+
+		platformResourcePath = os.path.join(os.path.abspath("resources"), sysconfig["platform"] + "_" + sysconfig["os"])
+		toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
+		toolchainCmakeFile = open(toolchainCmakePath, 'r')
+		toolchainCmakeData = toolchainCmakeFile.read()
+		toolchainCmakeData = toolchainCmakeData%({"path" : (platformResourcePath + "/")})
+		toolchainCmakeFile.close()
+
+		toolchainCmakeBuildPath = os.path.join(self.project["build"], "toolchain.cmake")
+		toolchainCmakeFile = open(toolchainCmakeBuildPath, 'w')
+		toolchainCmakeFile.write(toolchainCmakeData)
+		toolchainCmakeFile.close()
+
+		cmakeBuild = {}
+		cmakeBuild["include"] = os.path.join(os.path.abspath("resources"), "include")
+		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
+		libListFile = open(os.path.join(platformResourcePath, "liblist.txt"), "r")
+		libListData = libListFile.read()
+		libListFile.close()
+		cmakeBuild["lib"] = "os "
+		for libPair in libListData.split("\n") :
+			_data = libPair.split("=")
+			title = _data[0].strip()
+			lib = _data[1].strip()
+			if title == "default" or title == sysconfig["network"] :
+				cmakeBuild["lib"] = cmakeBuild["lib"] + lib + " "
+		cmakeBuild["lib"] = cmakeBuild["lib"].strip()
+
+		cmakePath = os.path.join("resources", "CMakeLists.txt")
+		cmakeFile = open(cmakePath, "r")
+		cmakeData = cmakeFile.read()
+		cmakeFile.close()
+		cmakeData = cmakeData%cmakeBuild
+
+		cmakePath = os.path.join(self.project["build"], "CMakeLists.txt")
+		cmakeFile = open(cmakePath, "w")
+		cmakeFile.write(cmakeData)
+		cmakeFile.close()
+
+		resourceSourcePath = os.path.join("resources", "src")
+		shutil.copy(os.path.join(resourceSourcePath, "main.c"), os.path.join(self.project["build"], "main.c"))
+		shutil.copy(os.path.join(resourceSourcePath, "uppaal.c"), os.path.join(self.project["build"], "uppaal.c"))
+
+		self.status["generating"] = True
+		generateWorker = GenerateApplicationThread(self, self.project["build"])
+		generateWorker.start()
+
 	def closeEditor(self, index) :
 		if self.editorArea.tabText(index) == "Configuration Editor" :
 			if not self.configurationEditor.checkSaved() :
@@ -438,6 +553,35 @@ class UPPAALThread(QtCore.QThread) :
 	def run(self) :
 		exitValue = os.system(self.utopiia.context["uppaal"] + " " + self.utopiia.project["model"])
 		self.signal.emit(exitValue)
+
+class GenerateApplicationThread(QtCore.QThread) :
+	exitSignal = QtCore.pyqtSignal(int)
+	consoleSignal = QtCore.pyqtSignal(str)
+
+	def __init__(self, parent, buildPath) :
+		super().__init__(parent)
+		self.exitSignal.connect(parent.generationTerminated)
+		self.consoleSignal.connect(parent.printConsole)
+		self.buildPath = buildPath
+		self.parent = parent
+
+	def run(self) :
+		originalPath = os.getcwd()
+		os.chdir(self.buildPath)
+		file = os.popen("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
+		self.sendDataToConsole(file)
+		file = os.popen("make")
+		self.sendDataToConsole(file)
+		os.chdir(originalPath)
+		self.exitSignal.emit(0)
+
+	def sendDataToConsole(self, file) :
+		while True :
+			data = file.readline()
+			if not data :
+				file.close()
+				break
+			self.consoleSignal.emit(data)
 
 if __name__ == "__main__" :
 	app = QApplication(sys.argv)

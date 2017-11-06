@@ -10,7 +10,7 @@ def parseDeclaration(text) :
 	text = eraseComment(text)
 	if not text :
 		print("syntax error")
-		return (None, None)
+		return (variables, functions)
 
 	# parse sentence and function
 	s = 0

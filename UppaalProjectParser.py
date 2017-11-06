@@ -1,5 +1,5 @@
 from xml.etree.ElementTree import Element, parse
-from DeclarationParser import *
+import DeclarationParser
 
 def parseUppaalProject(projectFile) :
 	project = parse(projectFile)
@@ -14,7 +14,7 @@ def parseUppaalProject(projectFile) :
 	for globalElement in root.getchildren() :
 		##### system/declaration #####
 		if globalElement.tag == "declaration" :
-			(variables, functions) = parseDeclaration(globalElement.text)
+			(variables, functions) = DeclarationParser.parseDeclaration(globalElement.text)
 			system["variables"] = variables
 			system["functions"] = functions
 		##### system/declaration #####
@@ -42,7 +42,7 @@ def parseUppaalProject(projectFile) :
 
 				### system/template/declaration ###
 				elif templateElement.tag == "declaration" :
-					(variables, functions) = parseDeclaration(templateElement.text)
+					(variables, functions) = DeclarationParser.parseDeclaration(templateElement.text)
 					template["variables"] = variables
 					template["functions"] = functions
 				### system/template/declaration ###
@@ -64,7 +64,7 @@ def parseUppaalProject(projectFile) :
 
 						# system/template/location/label #
 						elif locationElement.tag == "label" :
-							location["invariant"]["code"] = parseLabelFunction(locationElement.text)
+							location["invariant"]["code"] = DeclarationParser.parseLabelFunction(locationElement.text)
 
 						# system/template/location/committed #
 						elif locationElement.tag == "committed" :
@@ -76,7 +76,7 @@ def parseUppaalProject(projectFile) :
 
 					## location end-up part ##
 					if template["locations"].get(location["id"]) :
-						location["transitions"] = template["locations"][location["id"]]["transitions"] # TODO : test
+						location["transitions"] = template["locations"][location["id"]]["transitions"]
 					template["locations"][location["id"]] = location
 					## location end-up part ##
 				### system/template/location ###
@@ -117,9 +117,9 @@ def parseUppaalProject(projectFile) :
 								elif transitionElement.text[-1] == "?" :
 									transition["sync"]["direction"] = "I"
 							elif transitionElement.get("kind") == "guard" :
-								transition["guard"]["code"] = parseLabelFunction(transitionElement.text)
+								transition["guard"]["code"] = DeclarationParser.parseLabelFunction(transitionElement.text)
 							elif transitionElement.get("kind") == "assignment" :
-								transition["update"]["code"] = parseLabelFunction(transitionElement.text)
+								transition["update"]["code"] = DeclarationParser.parseLabelFunction(transitionElement.text)
 
 					## transition end-up part ##
 					template["transitions"].append(transition)

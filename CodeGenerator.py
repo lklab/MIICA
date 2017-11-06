@@ -373,9 +373,9 @@ def generateMappingCode(ioList) :
 		code += "\t{&(program_context.var_" + var["varname"] + "), "
 		code += "sizeof(program_context.var_" + var["varname"] + "), "
 		code += "\"" + var["address"] + "\", "
-		if var["direction"] == "out" :
+		if var["direction"] == "Out" :
 			code += "0},\n"
-		elif var["direction"] == "in" :
+		elif var["direction"] == "In" :
 			code += "1},\n"
 	code += "\t{NULL, 0, NULL, -1}\n};\n"
 	return code

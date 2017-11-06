@@ -33,12 +33,13 @@ CORRECT_MODEL_4_0 = \
 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'><nta><declaration>"""
 
 class UTOPIIA(QMainWindow) :
-	context = {}
-	project = {}
-	status = {}
-
 	def __init__(self) :
 		super().__init__()
+
+		self.context = {}
+		self.project = {}
+		self.status = {}
+
 		self.initUI()
 		self.getContext()
 		self.initProject()
@@ -64,6 +65,9 @@ class UTOPIIA(QMainWindow) :
 		editModelAction = QAction(QIcon("resources/sample.png"), "Edit Model", self)
 		editModelAction.triggered.connect(self.editModel)
 
+		systemConfigurationAction = QAction(QIcon("resources/sample.png"), "System Configuration", self)
+		systemConfigurationAction.triggered.connect(self.systemConfiguration)
+
 		# menu
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu("&File")
@@ -76,6 +80,7 @@ class UTOPIIA(QMainWindow) :
 		projectMenu.addAction(importModelAction)
 		projectMenu.addAction(editModelAction)
 		projectMenu.addSeparator()
+		projectMenu.addAction(systemConfigurationAction)
 
 		# toolbar
 		fileToolbar = self.addToolBar("")
@@ -87,6 +92,7 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar = self.addToolBar("")
 		projectToolbar.addAction(importModelAction)
 		projectToolbar.addAction(editModelAction)
+		projectToolbar.addAction(systemConfigurationAction)
 
 		# editor area
 		self.editorArea = QTabWidget()
@@ -96,11 +102,7 @@ class UTOPIIA(QMainWindow) :
 
 		# editors
 		self.projectExplorer = ProjectExplorer()
-		self.configurationEditor = ConfigurationEditor()
 		console = QTextEdit()
-
-		# for test
-		self.editorArea.addTab(self.configurationEditor, "Configuration Editor")
 
 		# layout
 		verticalSplitter = QSplitter(QtCore.Qt.Vertical)
@@ -134,26 +136,37 @@ class UTOPIIA(QMainWindow) :
 
 	def initProject(self) :
 		self.setWindowTitle("UTOPIIA - Untitled Project")
-		self.project["path"] = None
+		self.project["path"] = os.path.join("resources", "temp_project")
+		self.project["permanent"] = False
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
+		self.project["config"] = None
 		self.project["saved"] = True
 		self.projectExplorer.setProject(self.project["name"])
 
 	def initStatus(self) :
 		self.status["running uppaal"] = False
+		self.configurationEditor = None
 
 	def saveContext(self) :
 		file = open(os.path.join("resources", "context.data"), "wb")
 		pickle.dump(self.context, file)
 		file.close()
 
+	def checkSaved(self) :
+		if self.project["saved"] and (not self.configurationEditor or self.configurationEditor.checkSaved()) :
+			return True
+		else :
+			return False
+
 	def saveProjectFile(self) :
-		if self.project["path"] :
-			self.project["saved"] = True
-			file = open(os.path.join(self.project["path"], "project.utopiia"), "wb")
-			pickle.dump(self.project, file)
-			file.close()
+		self.project["saved"] = True
+		file = open(os.path.join(self.project["path"], "project.utopiia"), "wb")
+		pickle.dump(self.project, file)
+		file.close()
+
+		if self.configurationEditor :
+			self.configurationEditor.save(self.project["path"])
 
 	def loadProjectFile(self, path) :
 		try :
@@ -164,6 +177,8 @@ class UTOPIIA(QMainWindow) :
 			_project["path"] = path
 			if _project["model"] :
 				_project["model"] = os.path.join(path, "model.xml")
+			if _project["config"] :
+				_project["config"] = os.path.join(path, "sysconfig.data")
 			self.setWindowTitle("UTOPIIA - " + _project["name"])
 		except :
 			self.errorMessage("%s\n\nInvalid Project File."%path)
@@ -174,12 +189,13 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def importModelToProject(self, path) :
-		if not self.project["path"] :
-			self.project["model"] = os.path.join("resources", "model.xml.temp")
-		else :
-			self.project["model"] = os.path.join(self.project["path"], "model.xml")
+		self.project["model"] = os.path.join(self.project["path"], "model.xml")
 		shutil.copy(path, self.project["model"])
 		self.projectExplorer.setModelItem("Model.xml", self.editModel)
+
+		if self.configurationEditor :
+			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
+
 		self.project["saved"] = False
 
 	def checkUPPAALfile(self, path) :
@@ -218,6 +234,8 @@ class UTOPIIA(QMainWindow) :
 		self.projectExplorer.setProject(self.project["name"])
 		if self.project["model"] :
 			self.projectExplorer.setModelItem("Model.xml", self.editModel)
+		if self.project["config"] :
+			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
 
 	# message box
 	def notSavedMessage(self, ignoreButton) :
@@ -260,7 +278,7 @@ class UTOPIIA(QMainWindow) :
 			event.ignore()
 			return
 
-		if not self.project["saved"] :
+		if not self.checkSaved() :
 			if self.notSavedMessage(QMessageBox.Discard) :
 				event.accept()
 				return
@@ -281,7 +299,7 @@ class UTOPIIA(QMainWindow) :
 			self.informationMessage("Quit UPPAAL first.")
 			return False
 
-		if not self.project["saved"] :
+		if not self.checkSaved() :
 			if not self.notSavedMessage(QMessageBox.No) :
 				return False
 		self.initProject()
@@ -292,7 +310,7 @@ class UTOPIIA(QMainWindow) :
 			self.informationMessage("Quit UPPAAL first.")
 			return False
 
-		if not self.project["saved"] :
+		if not self.checkSaved() :
 			if not self.notSavedMessage(QMessageBox.No) :
 				return False
 
@@ -306,7 +324,7 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def saveProject(self) :
-		if not self.project["path"] :
+		if not self.project["permanent"] :
 			return self.saveProjectAs()
 		self.saveProjectFile()
 		return True
@@ -329,6 +347,11 @@ class UTOPIIA(QMainWindow) :
 			self.project["model"] = os.path.join(self.project["path"], "model.xml")
 			shutil.copy(tempPath, self.project["model"])
 
+		if self.configurationEditor :
+			self.configurationEditor.save(self.project["path"])
+			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
+
+		self.project["permanent"] = True
 		self.saveProjectFile()
 		self.resetProjectExplorer()
 		return True
@@ -385,9 +408,21 @@ class UTOPIIA(QMainWindow) :
 		uppaalWorker.start()
 		return True
 
+	def systemConfiguration(self) :
+		if not self.configurationEditor :
+			self.project["config"] = os.path.join(self.project["path"], "sysconfig.data")
+			self.configurationEditor = ConfigurationEditor(self.project["model"], self.project["config"])
+			self.editorArea.addTab(self.configurationEditor, "Configuration Editor")
+			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
+		else :
+			self.editorArea.setCurrentWidget(self.configurationEditor)
+
 	def closeEditor(self, index) :
-#		print(str(index))
-#		print(self.editorArea.tabText(index))
+		if self.editorArea.tabText(index) == "Configuration Editor" :
+			if not self.configurationEditor.checkSaved() :
+				if not self.notSavedMessage(QMessageBox.No) :
+					return
+			self.configurationEditor = None
 		self.editorArea.removeTab(index)
 
 # worker threads

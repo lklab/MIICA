@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<nta>
+	<platform arch="x86_64">
+		<os type="Linux">
+			<network>Standard I/O</network>
+			<network>SOEM</network>
+		</os>
+	</platform>
+	<platform arch="ARM">
+		<os type="Linux">
+			<network>Standard I/O</network>
+			<network>SOEM</network>
+		</os>
+	</platform>
+</nta>

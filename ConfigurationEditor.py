@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 
 import os, pickle
 import UppaalProjectParser
+import ResourceManager
 
 class ConfigurationItem(QWidget) :
 	def __init__(self) :
@@ -192,12 +193,7 @@ class ConfigurationEditor(QMainWindow) :
 	def __init__(self, modelPath, configPath) :
 		super().__init__()
 
-		self.platformList = {}
-		self.platformList["x86_64"] = {}
-		self.platformList["ARM"] = {}
-		self.platformList["x86_64"]["Linux"] = ["Standard I/O", "SOEM"]
-		self.platformList["ARM"]["Linux"] = ["Standard I/O", "SOEM"]
-
+		self.platformList = ResourceManager.readPlatformList()
 		self.saved = True
 
 		refreshAction = QAction(QIcon("resources/sample.png"), "Refresh", self)

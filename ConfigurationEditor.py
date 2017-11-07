@@ -241,6 +241,11 @@ class ConfigurationEditor(QMainWindow) :
 		platformLayout.addWidget(self.networkSelect, 2, 3)
 		platformLayout.addWidget(self.periodEdit, 2, 4)
 
+		self.platformSelect.setMaximumWidth(150)
+		self.osSelect.setMaximumWidth(150)
+		self.networkSelect.setMaximumWidth(150)
+		self.periodEdit.setMaximumWidth(150)
+
 		platformLayout.setContentsMargins(10, 10, 10, 10)
 		platformLayout.setHorizontalSpacing(20)
 		platformLayout.setColumnMinimumWidth(1, 150)

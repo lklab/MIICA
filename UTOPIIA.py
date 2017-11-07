@@ -14,6 +14,9 @@ from ConfigurationEditor import *
 import UppaalProjectParser
 import CodeGenerator
 
+LOCAL_PLATFORM = "x86_64"
+LOCAL_OS = "Linux"
+
 CORRECT_UPPAAL_4_1 = """#!/usr/bin/env bash
 
 #  
@@ -72,6 +75,8 @@ class UTOPIIA(QMainWindow) :
 
 		generateAction = QAction(QIcon("resources/sample.png"), "Generate Application", self)
 		generateAction.triggered.connect(self.generateApplication)
+		regenerateAction = QAction(QIcon("resources/sample.png"), "Regenerate Application", self)
+		regenerateAction.triggered.connect(self.regenerateApplication)
 
 		# menu
 		menubar = self.menuBar()
@@ -88,6 +93,7 @@ class UTOPIIA(QMainWindow) :
 		projectMenu.addAction(systemConfigurationAction)
 		projectMenu.addSeparator()
 		projectMenu.addAction(generateAction)
+		projectMenu.addAction(regenerateAction)
 
 		# toolbar
 		fileToolbar = self.addToolBar("")
@@ -101,6 +107,7 @@ class UTOPIIA(QMainWindow) :
 		projectToolbar.addAction(editModelAction)
 		projectToolbar.addAction(systemConfigurationAction)
 		projectToolbar.addAction(generateAction)
+		projectToolbar.addAction(regenerateAction)
 
 		# editor area
 		self.editorArea = QTabWidget()
@@ -462,6 +469,7 @@ class UTOPIIA(QMainWindow) :
 			self.errorMessage("Fail to read model and system configuration file.")
 			return
 
+		# generate model code
 		modelCode = None
 		headerCode = None
 		(modelCode, headerCode) = CodeGenerator.generateCode(model, sysconfig)
@@ -470,12 +478,14 @@ class UTOPIIA(QMainWindow) :
 			self.errorMessage("Fail to generate code.")
 			return
 
+		# create build directory
 		if not self.project["build"] :
 			self.project["build"] = os.path.join(self.project["path"], "build")
 
 		if not os.path.isdir(self.project["build"]) :
 			os.mkdir(self.project["build"])
 
+		# create model code files
 		modelPath = os.path.join(self.project["build"], "model.c")
 		headerPath = os.path.join(self.project["build"], "model.h")
 
@@ -486,18 +496,28 @@ class UTOPIIA(QMainWindow) :
 		modelSourceFile.close()
 		modelHeaderFile.close()
 
+		if sysconfig["platform"] == LOCAL_PLATFORM and sysconfig["os"] == LOCAL_OS :
+			localBuild = True
+		else :
+			localBuild = False
+
 		platformResourcePath = os.path.join(os.path.abspath("resources"), sysconfig["platform"] + "_" + sysconfig["os"])
-		toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
-		toolchainCmakeFile = open(toolchainCmakePath, 'r')
-		toolchainCmakeData = toolchainCmakeFile.read()
-		toolchainCmakeData = toolchainCmakeData%({"path" : (platformResourcePath + "/")})
-		toolchainCmakeFile.close()
 
-		toolchainCmakeBuildPath = os.path.join(self.project["build"], "toolchain.cmake")
-		toolchainCmakeFile = open(toolchainCmakeBuildPath, 'w')
-		toolchainCmakeFile.write(toolchainCmakeData)
-		toolchainCmakeFile.close()
+		if not localBuild :
+			# setting up toolchain cmake file
+			toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
+			toolchainCmakeFile = open(toolchainCmakePath, 'r')
+			toolchainCmakeData = toolchainCmakeFile.read()
+			toolchainCmakeData = toolchainCmakeData%({"path" : (platformResourcePath + "/")})
+			toolchainCmakeFile.close()
 
+			# create toolchain cmake file
+			toolchainCmakeBuildPath = os.path.join(self.project["build"], "toolchain.cmake")
+			toolchainCmakeFile = open(toolchainCmakeBuildPath, 'w')
+			toolchainCmakeFile.write(toolchainCmakeData)
+			toolchainCmakeFile.close()
+
+		# setting up CMakeLists.txt file
 		cmakeBuild = {}
 		cmakeBuild["include"] = os.path.join(os.path.abspath("resources"), "include")
 		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
@@ -519,18 +539,30 @@ class UTOPIIA(QMainWindow) :
 		cmakeFile.close()
 		cmakeData = cmakeData%cmakeBuild
 
+		# create CMakeLists.txt file
 		cmakePath = os.path.join(self.project["build"], "CMakeLists.txt")
 		cmakeFile = open(cmakePath, "w")
 		cmakeFile.write(cmakeData)
 		cmakeFile.close()
 
+		# copy uppaal engine code
 		resourceSourcePath = os.path.join("resources", "src")
 		shutil.copy(os.path.join(resourceSourcePath, "main.c"), os.path.join(self.project["build"], "main.c"))
 		shutil.copy(os.path.join(resourceSourcePath, "uppaal.c"), os.path.join(self.project["build"], "uppaal.c"))
 
+		# start auto build
 		self.status["generating"] = True
-		generateWorker = GenerateApplicationThread(self, self.project["build"])
+		generateWorker = GenerateApplicationThread(self, self.project["build"], localBuild)
 		generateWorker.start()
+
+	def regenerateApplication(self) :
+		if self.status["generating"] :
+			return
+
+		if self.project["build"] and os.path.isdir(self.project["build"]) :
+			shutil.rmtree(self.project["build"])
+
+		self.generateApplication()
 
 	def closeEditor(self, index) :
 		if self.editorArea.tabText(index) == "Configuration Editor" :
@@ -558,17 +590,22 @@ class GenerateApplicationThread(QtCore.QThread) :
 	exitSignal = QtCore.pyqtSignal(int)
 	consoleSignal = QtCore.pyqtSignal(str)
 
-	def __init__(self, parent, buildPath) :
+	def __init__(self, parent, buildPath, isLocal=False) :
 		super().__init__(parent)
 		self.exitSignal.connect(parent.generationTerminated)
 		self.consoleSignal.connect(parent.printConsole)
-		self.buildPath = buildPath
+
 		self.parent = parent
+		self.buildPath = buildPath
+		self.isLocal = isLocal
 
 	def run(self) :
 		originalPath = os.getcwd()
 		os.chdir(self.buildPath)
-		file = os.popen("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
+		if self.isLocal :
+			file = os.popen("cmake .")
+		else :
+			file = os.popen("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
 		self.sendDataToConsole(file)
 		file = os.popen("make")
 		self.sendDataToConsole(file)

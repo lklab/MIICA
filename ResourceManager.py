@@ -15,11 +15,11 @@ def readPlatformList() :
 
 			for osElement in platformElement.getchildren() :
 				if osElement.tag == "os" :
-					os = osElement.get("type")
-					platformList[platform][os] = []
+					opSys = osElement.get("type")
+					platformList[platform][opSys] = []
 
 					for networkElement in osElement.getchildren() :
 						if networkElement.tag == "network" :
-							platformList[platform][os].append(networkElement.text)
+							platformList[platform][opSys].append(networkElement.text)
 
 	return platformList

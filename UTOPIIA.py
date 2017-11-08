@@ -3,7 +3,6 @@
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
 	QFileDialog, QApplication, QSplitter, QTextEdit, QTabWidget)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize
 from PyQt5 import QtCore
 
 import sys, os
@@ -11,9 +10,11 @@ import shutil, pickle
 
 from ProjectExplorer import *
 from ConfigurationEditor import *
+from ControllerManager import *
 import UppaalProjectParser
 import CodeGenerator
 
+# platform specific
 LOCAL_PLATFORM = "x86_64"
 LOCAL_OS = "Linux"
 
@@ -72,6 +73,8 @@ class UTOPIIA(QMainWindow) :
 
 		systemConfigurationAction = QAction(QIcon("resources/sample.png"), "System Configuration", self)
 		systemConfigurationAction.triggered.connect(self.systemConfiguration)
+		controllerConfigurationAction = QAction(QIcon("resources/sample.png"), "Controller Manager", self)
+		controllerConfigurationAction.triggered.connect(self.controllerConfiguration)
 
 		generateAction = QAction(QIcon("resources/sample.png"), "Generate Application", self)
 		generateAction.triggered.connect(self.generateApplication)
@@ -91,6 +94,7 @@ class UTOPIIA(QMainWindow) :
 		projectMenu.addAction(editModelAction)
 		projectMenu.addSeparator()
 		projectMenu.addAction(systemConfigurationAction)
+		projectMenu.addAction(controllerConfigurationAction)
 		projectMenu.addSeparator()
 		projectMenu.addAction(generateAction)
 		projectMenu.addAction(regenerateAction)
@@ -102,12 +106,17 @@ class UTOPIIA(QMainWindow) :
 		fileToolbar.addAction(saveProjectAction)
 		fileToolbar.addAction(saveProjectAsAction)
 
-		projectToolbar = self.addToolBar("")
-		projectToolbar.addAction(importModelAction)
-		projectToolbar.addAction(editModelAction)
-		projectToolbar.addAction(systemConfigurationAction)
-		projectToolbar.addAction(generateAction)
-		projectToolbar.addAction(regenerateAction)
+		modelToolbar = self.addToolBar("")
+		modelToolbar.addAction(importModelAction)
+		modelToolbar.addAction(editModelAction)
+
+		configurationToolbar = self.addToolBar("")
+		configurationToolbar.addAction(systemConfigurationAction)
+		configurationToolbar.addAction(controllerConfigurationAction)
+
+		generationToolbar = self.addToolBar("")
+		generationToolbar.addAction(generateAction)
+		generationToolbar.addAction(regenerateAction)
 
 		# editor area
 		self.editorArea = QTabWidget()
@@ -165,6 +174,7 @@ class UTOPIIA(QMainWindow) :
 		self.status["running uppaal"] = False
 		self.status["generating"] = False
 		self.configurationEditor = None
+		self.controllerManager = None
 
 	def saveContext(self) :
 		file = open(os.path.join("resources", "context.data"), "wb")
@@ -172,7 +182,9 @@ class UTOPIIA(QMainWindow) :
 		file.close()
 
 	def checkSaved(self) :
-		if self.project["saved"] and (not self.configurationEditor or self.configurationEditor.checkSaved()) :
+		if self.project["saved"] and \
+			(not self.configurationEditor or self.configurationEditor.checkSaved()) and \
+			(not self.controllerManager or self.controllerManager.checkSaved()) :
 			return True
 		else :
 			return False
@@ -185,6 +197,9 @@ class UTOPIIA(QMainWindow) :
 
 		if self.configurationEditor :
 			self.configurationEditor.save(self.project["path"])
+
+		if self.controllerManager :
+			self.controllerManager.save(self.project["path"])
 
 	def loadProjectFile(self, path) :
 		try :
@@ -260,6 +275,7 @@ class UTOPIIA(QMainWindow) :
 		for count in range(self.editorArea.count()) :
 			self.editorArea.removeTab(0)
 		self.configurationEditor = None
+		self.controllerManager = None
 
 	# message box
 	def notSavedMessage(self, ignoreButton) :
@@ -380,8 +396,10 @@ class UTOPIIA(QMainWindow) :
 			shutil.copy(tempPath, self.project["model"])
 
 		if self.configurationEditor :
-			self.configurationEditor.save(self.project["path"])
 			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
+
+		if self.controllerManager :
+			self.controllerManager.setProjectPath(self.project["path"])
 
 		self.project["permanent"] = True
 		self.saveProjectFile()
@@ -446,8 +464,13 @@ class UTOPIIA(QMainWindow) :
 			self.configurationEditor = ConfigurationEditor(self.project["model"], self.project["config"])
 			self.editorArea.addTab(self.configurationEditor, "Configuration Editor")
 			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
-		else :
-			self.editorArea.setCurrentWidget(self.configurationEditor)
+		self.editorArea.setCurrentWidget(self.configurationEditor)
+
+	def controllerConfiguration(self) :
+		if not self.controllerManager :
+			self.controllerManager = ControllerManager(self.project["path"])
+			self.editorArea.addTab(self.controllerManager, "Controller Manager")
+		self.editorArea.setCurrentWidget(self.controllerManager)
 
 	def generateApplication(self) :
 		if self.status["generating"] :
@@ -508,7 +531,7 @@ class UTOPIIA(QMainWindow) :
 			toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
 			toolchainCmakeFile = open(toolchainCmakePath, 'r')
 			toolchainCmakeData = toolchainCmakeFile.read()
-			toolchainCmakeData = toolchainCmakeData%({"path" : (platformResourcePath + "/")})
+			toolchainCmakeData = toolchainCmakeData%({"path" : (os.path.join(platformResourcePath, ""))})
 			toolchainCmakeFile.close()
 
 			# create toolchain cmake file
@@ -565,11 +588,22 @@ class UTOPIIA(QMainWindow) :
 		self.generateApplication()
 
 	def closeEditor(self, index) :
+		# close configuration editor
 		if self.editorArea.tabText(index) == "Configuration Editor" :
 			if not self.configurationEditor.checkSaved() :
 				if not self.notSavedMessage(QMessageBox.No) :
 					return
 			self.configurationEditor = None
+
+		# close controller manager
+		elif self.editorArea.tabText(index) == "Controller Manager" :
+			if not self.controllerManager.checkSaved() :
+				if not self.notSavedMessage(QMessageBox.No) :
+					return
+			self.controllerManager.cleanup()
+			self.controllerManager = None
+
+		# close tab
 		self.editorArea.removeTab(index)
 
 # worker threads
@@ -583,6 +617,7 @@ class UPPAALThread(QtCore.QThread) :
 		self.signal.connect(parent.uppaalTerminated)
 
 	def run(self) :
+		# platform specific
 		exitValue = os.system(self.utopiia.context["uppaal"] + " " + self.utopiia.project["model"])
 		self.signal.emit(exitValue)
 
@@ -602,6 +637,8 @@ class GenerateApplicationThread(QtCore.QThread) :
 	def run(self) :
 		originalPath = os.getcwd()
 		os.chdir(self.buildPath)
+
+		# platform specific
 		if self.isLocal :
 			file = os.popen("cmake .")
 		else :
@@ -609,6 +646,7 @@ class GenerateApplicationThread(QtCore.QThread) :
 		self.sendDataToConsole(file)
 		file = os.popen("make")
 		self.sendDataToConsole(file)
+
 		os.chdir(originalPath)
 		self.exitSignal.emit(0)
 

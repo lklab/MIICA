@@ -320,22 +320,26 @@ class UTOPIIA(QMainWindow) :
 
 		if not self.checkSaved() :
 			if self.notSavedMessage(QMessageBox.Discard) :
+				self.closeEditor(-1)
 				event.accept()
 				return
 			else :
 				event.ignore()
 				return
 		else :
+			self.closeEditor(-1)
 			event.accept()
 			return
 
 	# signal handlers
 	def uppaalTerminated(self, exitValue) :
 		self.status["running uppaal"] = False
+		self.uppaalWorker.wait()
 
 	def generationTerminated(self, exitValue) :
 		self.printConsole("Build Finished.\n")
 		self.status["generating"] = False
+		self.generateWorker.wait()
 
 	def printConsole(self, data) :
 		self.console.setPlainText(self.console.toPlainText() + data)
@@ -454,8 +458,8 @@ class UTOPIIA(QMainWindow) :
 				return False
 
 		self.status["running uppaal"] = True
-		uppaalWorker = UPPAALThread(self)
-		uppaalWorker.start()
+		self.uppaalWorker = UPPAALThread(self)
+		self.uppaalWorker.start()
 		return True
 
 	def systemConfiguration(self) :
@@ -575,8 +579,8 @@ class UTOPIIA(QMainWindow) :
 
 		# start auto build
 		self.status["generating"] = True
-		generateWorker = GenerateApplicationThread(self, self.project["build"], localBuild)
-		generateWorker.start()
+		self.generateWorker = GenerateApplicationThread(self, self.project["build"], localBuild)
+		self.generateWorker.start()
 
 	def regenerateApplication(self) :
 		if self.status["generating"] :
@@ -589,26 +593,28 @@ class UTOPIIA(QMainWindow) :
 
 	def closeEditor(self, index) :
 		# close configuration editor
-		if self.editorArea.tabText(index) == "Configuration Editor" :
-			if not self.configurationEditor.checkSaved() :
-				if not self.notSavedMessage(QMessageBox.No) :
-					return
-			self.configurationEditor = None
+		if index == -1 or self.editorArea.tabText(index) == "Configuration Editor" :
+			if self.configurationEditor :
+				if not self.configurationEditor.checkSaved() :
+					if not self.notSavedMessage(QMessageBox.No) :
+						return
+				self.configurationEditor = None
 
 		# close controller manager
-		elif self.editorArea.tabText(index) == "Controller Manager" :
-			if not self.controllerManager.checkSaved() :
-				if not self.notSavedMessage(QMessageBox.No) :
-					return
-			self.controllerManager.cleanup()
-			self.controllerManager = None
+		if index == -1 or self.editorArea.tabText(index) == "Controller Manager" :
+			if self.controllerManager :
+				if not self.controllerManager.checkSaved() :
+					if not self.notSavedMessage(QMessageBox.No) :
+						return
+				self.controllerManager.cleanup()
+				self.controllerManager = None
 
 		# close tab
-		self.editorArea.removeTab(index)
+		if index != -1 :
+			self.editorArea.removeTab(index)
 
 # worker threads
 class UPPAALThread(QtCore.QThread) :
-	utopiia = None
 	signal = QtCore.pyqtSignal(int)
 
 	def __init__(self, parent) :
@@ -630,7 +636,6 @@ class GenerateApplicationThread(QtCore.QThread) :
 		self.exitSignal.connect(parent.generationTerminated)
 		self.consoleSignal.connect(parent.printConsole)
 
-		self.parent = parent
 		self.buildPath = buildPath
 		self.isLocal = isLocal
 

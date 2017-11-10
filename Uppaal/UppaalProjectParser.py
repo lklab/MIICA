@@ -1,5 +1,5 @@
 from xml.etree.ElementTree import Element, parse
-import DeclarationParser
+from . import DeclarationParser
 
 def parseUppaalProject(projectFile) :
 	project = parse(projectFile)

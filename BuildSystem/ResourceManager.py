@@ -3,7 +3,7 @@ from xml.etree.ElementTree import parse
 import os
 
 def readPlatformList() :
-	platformListXML = parse(os.path.join("resources", "platform_list.xml"))
+	platformListXML = parse(os.path.join("Resources", "platform_list.xml"))
 	root = platformListXML.getroot()
 
 	platformList = {}

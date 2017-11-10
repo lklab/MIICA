@@ -5,8 +5,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 import os, pickle
-import UppaalProjectParser
-import ResourceManager
+import Uppaal.UppaalProjectParser as UppaalProjectParser
+import BuildSystem.ResourceManager as ResourceManager
 
 class ConfigurationItem(QWidget) :
 	def __init__(self) :
@@ -119,9 +119,9 @@ class ConfigurationList(QMainWindow) :
 		self.dataList = None
 
 		# actions
-		insertAction = QAction(QIcon("resources/sample.png"), "Insert", self)
+		insertAction = QAction(QIcon("Resources/sample.png"), "Insert", self)
 		insertAction.triggered.connect(self.insertItem)
-		removeAction = QAction(QIcon("resources/sample.png"), "Remove", self)
+		removeAction = QAction(QIcon("Resources/sample.png"), "Remove", self)
 		removeAction.triggered.connect(self.removeItem)
 
 		# layout
@@ -196,7 +196,7 @@ class ConfigurationEditor(QMainWindow) :
 		self.platformList = ResourceManager.readPlatformList()
 		self.saved = True
 
-		refreshAction = QAction(QIcon("resources/sample.png"), "Refresh", self)
+		refreshAction = QAction(QIcon("Resources/sample.png"), "Refresh", self)
 		refreshAction.triggered.connect(self.refreshModel)
 		toolbar = self.addToolBar("")
 		toolbar.addAction(refreshAction)

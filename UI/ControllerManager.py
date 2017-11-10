@@ -15,15 +15,15 @@ class ControllerManager(QMainWindow) :
 		self.controller = Controller()
 
 		# actions
-		connectAction = QAction(QIcon("resources/sample.png"), "Connect", self)
+		connectAction = QAction(QIcon("Resources/sample.png"), "Connect", self)
 		connectAction.triggered.connect(self.connect)
-		disconnectAction = QAction(QIcon("resources/sample.png"), "Disconnect", self)
+		disconnectAction = QAction(QIcon("Resources/sample.png"), "Disconnect", self)
 		disconnectAction.triggered.connect(self.disconnect)
-		transmitApplicationAction = QAction(QIcon("resources/sample.png"), "Transmit Application", self)
+		transmitApplicationAction = QAction(QIcon("Resources/sample.png"), "Transmit Application", self)
 		transmitApplicationAction.triggered.connect(self.transmitApplication)
-		runAction = QAction(QIcon("resources/sample.png"), "Run", self)
+		runAction = QAction(QIcon("Resources/sample.png"), "Run", self)
 		runAction.triggered.connect(self.runApplication)
-		stopAction = QAction(QIcon("resources/sample.png"), "Stop", self)
+		stopAction = QAction(QIcon("Resources/sample.png"), "Stop", self)
 		stopAction.triggered.connect(self.stopApplication)
 
 		# toolbar

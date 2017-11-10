@@ -8,11 +8,11 @@ from PyQt5 import QtCore
 import sys, os
 import shutil, pickle
 
-from ProjectExplorer import *
-from ConfigurationEditor import *
-from ControllerManager import *
-import UppaalProjectParser
-import CodeGenerator
+from UI.ProjectExplorer import *
+from UI.ConfigurationEditor import *
+from UI.ControllerManager import *
+import Uppaal.UppaalProjectParser as UppaalProjectParser
+import BuildSystem.CodeGenerator as CodeGenerator
 
 # platform specific
 LOCAL_PLATFORM = "x86_64"
@@ -53,32 +53,32 @@ class UTOPIIA(QMainWindow) :
 
 	def initUI(self) :
 		# setting up actions
-		newProjectAction = QAction(QIcon("resources/sample.png"), "New Project", self)
+		newProjectAction = QAction(QIcon("Resources/sample.png"), "New Project", self)
 		newProjectAction.setShortcut("Ctrl+N")
 		newProjectAction.triggered.connect(self.newProject)
-		openProjectAction = QAction(QIcon("resources/sample.png"), "Open Project...", self)
+		openProjectAction = QAction(QIcon("Resources/sample.png"), "Open Project...", self)
 		openProjectAction.setShortcut("Ctrl+O")
 		openProjectAction.triggered.connect(self.openProject)
-		saveProjectAction = QAction(QIcon("resources/sample.png"), "Save Project", self)
+		saveProjectAction = QAction(QIcon("Resources/sample.png"), "Save Project", self)
 		saveProjectAction.setShortcut("Ctrl+S")
 		saveProjectAction.triggered.connect(self.saveProject)
-		saveProjectAsAction = QAction(QIcon("resources/sample.png"), "Save Project As...", self)
+		saveProjectAsAction = QAction(QIcon("Resources/sample.png"), "Save Project As...", self)
 		saveProjectAsAction.setShortcut("Ctrl+Shift+S")
 		saveProjectAsAction.triggered.connect(self.saveProjectAs)
 
-		importModelAction = QAction(QIcon("resources/sample.png"), "Import Model", self)
+		importModelAction = QAction(QIcon("Resources/sample.png"), "Import Model", self)
 		importModelAction.triggered.connect(self.importModel)
-		editModelAction = QAction(QIcon("resources/sample.png"), "Edit Model", self)
+		editModelAction = QAction(QIcon("Resources/sample.png"), "Edit Model", self)
 		editModelAction.triggered.connect(self.editModel)
 
-		systemConfigurationAction = QAction(QIcon("resources/sample.png"), "System Configuration", self)
+		systemConfigurationAction = QAction(QIcon("Resources/sample.png"), "System Configuration", self)
 		systemConfigurationAction.triggered.connect(self.systemConfiguration)
-		controllerConfigurationAction = QAction(QIcon("resources/sample.png"), "Controller Manager", self)
+		controllerConfigurationAction = QAction(QIcon("Resources/sample.png"), "Controller Manager", self)
 		controllerConfigurationAction.triggered.connect(self.controllerConfiguration)
 
-		generateAction = QAction(QIcon("resources/sample.png"), "Generate Application", self)
+		generateAction = QAction(QIcon("Resources/sample.png"), "Generate Application", self)
 		generateAction.triggered.connect(self.generateApplication)
-		regenerateAction = QAction(QIcon("resources/sample.png"), "Regenerate Application", self)
+		regenerateAction = QAction(QIcon("Resources/sample.png"), "Regenerate Application", self)
 		regenerateAction.triggered.connect(self.regenerateApplication)
 
 		# menu
@@ -152,7 +152,7 @@ class UTOPIIA(QMainWindow) :
 	# private methods
 	def getContext(self) :
 		try :
-			file = open(os.path.join("resources", "context.data"), "rb")
+			file = open(os.path.join("Resources", "context.data"), "rb")
 			self.context = pickle.load(file)
 			file.close()
 		except :
@@ -160,7 +160,7 @@ class UTOPIIA(QMainWindow) :
 
 	def initProject(self) :
 		self.setWindowTitle("UTOPIIA - Untitled Project")
-		self.project["path"] = os.path.join("resources", "temp_project")
+		self.project["path"] = os.path.join("Resources", "temp_project")
 		self.project["permanent"] = False
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
@@ -177,7 +177,7 @@ class UTOPIIA(QMainWindow) :
 		self.controllerManager = None
 
 	def saveContext(self) :
-		file = open(os.path.join("resources", "context.data"), "wb")
+		file = open(os.path.join("Resources", "context.data"), "wb")
 		pickle.dump(self.context, file)
 		file.close()
 
@@ -453,7 +453,7 @@ class UTOPIIA(QMainWindow) :
 
 		if not self.project["model"] :
 			if self.newModelMessage() :
-				self.importModelToProject(os.path.join("resources", "model.xml"))
+				self.importModelToProject(os.path.join("Resources", "model.xml"))
 			else :
 				return False
 
@@ -528,7 +528,7 @@ class UTOPIIA(QMainWindow) :
 		else :
 			localBuild = False
 
-		platformResourcePath = os.path.join(os.path.abspath("resources"), sysconfig["platform"] + "_" + sysconfig["os"])
+		platformResourcePath = os.path.join(os.path.abspath("Resources"), sysconfig["platform"] + "_" + sysconfig["os"])
 
 		if not localBuild :
 			# setting up toolchain cmake file
@@ -546,7 +546,7 @@ class UTOPIIA(QMainWindow) :
 
 		# setting up CMakeLists.txt file
 		cmakeBuild = {}
-		cmakeBuild["include"] = os.path.join(os.path.abspath("resources"), "include")
+		cmakeBuild["include"] = os.path.join(os.path.abspath("Resources"), "include")
 		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
 		libListFile = open(os.path.join(platformResourcePath, "liblist.txt"), "r")
 		libListData = libListFile.read()
@@ -560,7 +560,7 @@ class UTOPIIA(QMainWindow) :
 				cmakeBuild["lib"] = cmakeBuild["lib"] + lib + " "
 		cmakeBuild["lib"] = cmakeBuild["lib"].strip()
 
-		cmakePath = os.path.join("resources", "CMakeLists.txt")
+		cmakePath = os.path.join("Resources", "CMakeLists.txt")
 		cmakeFile = open(cmakePath, "r")
 		cmakeData = cmakeFile.read()
 		cmakeFile.close()
@@ -573,7 +573,7 @@ class UTOPIIA(QMainWindow) :
 		cmakeFile.close()
 
 		# copy uppaal engine code
-		resourceSourcePath = os.path.join("resources", "src")
+		resourceSourcePath = os.path.join("Resources", "src")
 		shutil.copy(os.path.join(resourceSourcePath, "main.c"), os.path.join(self.project["build"], "main.c"))
 		shutil.copy(os.path.join(resourceSourcePath, "uppaal.c"), os.path.join(self.project["build"], "uppaal.c"))
 
@@ -595,7 +595,7 @@ class UTOPIIA(QMainWindow) :
 		# close configuration editor
 		if index == -1 or self.editorArea.tabText(index) == "Configuration Editor" :
 			if self.configurationEditor :
-				if not self.configurationEditor.checkSaved() :
+				if index != -1 and not self.configurationEditor.checkSaved() :
 					if not self.notSavedMessage(QMessageBox.No) :
 						return
 				self.configurationEditor = None
@@ -603,7 +603,7 @@ class UTOPIIA(QMainWindow) :
 		# close controller manager
 		if index == -1 or self.editorArea.tabText(index) == "Controller Manager" :
 			if self.controllerManager :
-				if not self.controllerManager.checkSaved() :
+				if index != -1 and not self.controllerManager.checkSaved() :
 					if not self.notSavedMessage(QMessageBox.No) :
 						return
 				self.controllerManager.cleanup()

@@ -170,15 +170,15 @@ class Controller() :
 		if not self.status["connected"] :
 			return False
 
+		if self.receiverThread :
+			self.receiverThread.stop()
+			self.receiverThread.wait()
+			self.receiverThread = None
+
 		if self.connectThread :
 			self.connectThread.stop()
 			self.connectThread.wait()
 			self.connectThread = None
-
-		if self.receiverThread :
-			self.receiverThread.stop()
-#			self.receiverThread.wait() # TODO
-			self.receiverThread = None
 
 		self.connectRequestProcessedCallback = None
 		self.dataReceivedCallback = None
@@ -289,10 +289,7 @@ class ConnectThread(QtCore.QThread) :
 
 	def stop(self) :
 		if self.socket :
-			try :
-				self.socket.close()
-			except :
-				pass
+			self.socket.close()
 
 	def getSocket(self) :
 		return self.socket
@@ -317,11 +314,9 @@ class ReceiverThread(QtCore.QThread) :
 			pass
 		self.stop()
 		self.signal.emit(bytes(0))
-		print("receiver end") # TODO test
 
 	def stop(self) :
-		self.flag = False
-		try :
+		if self.flag :
+			self.flag = False
+			self.socket.shutdown(SHUT_RDWR)
 			self.socket.close()
-		except :
-			pass

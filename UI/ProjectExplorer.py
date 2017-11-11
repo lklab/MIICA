@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import QTreeView, QAbstractItemView
-from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+
+from UI.Core import Icons
 
 class ProjectExplorer(QTreeView) :
 	def __init__(self) :
@@ -30,7 +32,7 @@ class ProjectExplorer(QTreeView) :
 		self.projectItemModel = QStandardItemModel()
 		self.projectItemModel.setHorizontalHeaderLabels([name])
 
-		self.rootItem = QStandardItem(QIcon("Resources/sample.png"), name)
+		self.rootItem = QStandardItem(Icons.Project, name)
 		self.rootItem.setData(None)
 		self.projectItemModel.appendRow(self.rootItem)
 		index = self.projectItemModel.indexFromItem(self.rootItem)
@@ -43,14 +45,14 @@ class ProjectExplorer(QTreeView) :
 			self.modelItem.setText(name)
 			self.modelItem.setData(callback)
 		else :
-			self.modelItem = self.addItem(QIcon("Resources/sample.png"), name, callback)
+			self.modelItem = self.addItem(Icons.EditModel, name, callback)
 
 	def setSystemConfigurationItem(self, name, callback) :
 		if self.configurationItem :
 			self.configurationItem.setText(name)
 			self.configurationItem.setData(callback)
 		else :
-			self.configurationItem = self.addItem(QIcon("Resources/sample.png"), name, callback)
+			self.configurationItem = self.addItem(Icons.SystemConfiguration, name, callback)
 
 	def doubleClickHandler(self, index) :
 		item = self.projectItemModel.itemFromIndex(index)

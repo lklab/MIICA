@@ -1,42 +1,24 @@
 #!/usr/bin/python3
 
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QMessageBox, QAction, 
-	QFileDialog, QApplication, QSplitter, QTextEdit, QTabWidget)
+	QFileDialog, QApplication, QSplitter, QTabWidget)
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 
 import sys, os
 import shutil, pickle
 
+from UI.Core import Paths
+from UI.Core import Icons
+from UI.Core import Platform
+from UI.Core import Console
+
 from UI.ProjectExplorer import *
 from UI.ConfigurationEditor import *
 from UI.ControllerManager import *
+
 import Uppaal.UppaalProjectParser as UppaalProjectParser
 import BuildSystem.CodeGenerator as CodeGenerator
-
-# platform specific
-LOCAL_PLATFORM = "x86_64"
-LOCAL_OS = "Linux"
-
-CORRECT_UPPAAL_4_1 = """#!/usr/bin/env bash
-
-#  
-# Run this script to start UPPAAL 4.1.x.
-#
-"""
-CORRECT_UPPAAL_4_0 = """#!/usr/bin/env bash
-
-#  
-# Run this script to start UPPAAL 4.0.x.
-#
-"""
-CORRECT_MODEL_4_1 = """<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' \
-'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
-"""
-CORRECT_MODEL_4_0 = \
-"""<?xml version='1.0' encoding='utf-8'?><!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' \
-'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'><nta><declaration>"""
 
 class UTOPIIA(QMainWindow) :
 	def __init__(self) :
@@ -46,6 +28,8 @@ class UTOPIIA(QMainWindow) :
 		self.project = {}
 		self.status = {}
 
+		Icons.init()
+
 		self.initUI()
 		self.getContext()
 		self.initProject()
@@ -53,32 +37,32 @@ class UTOPIIA(QMainWindow) :
 
 	def initUI(self) :
 		# setting up actions
-		newProjectAction = QAction(QIcon("Resources/sample.png"), "New Project", self)
+		newProjectAction = QAction(Icons.NewProject, "New Project", self)
 		newProjectAction.setShortcut("Ctrl+N")
 		newProjectAction.triggered.connect(self.newProject)
-		openProjectAction = QAction(QIcon("Resources/sample.png"), "Open Project...", self)
+		openProjectAction = QAction(Icons.OpenProject, "Open Project...", self)
 		openProjectAction.setShortcut("Ctrl+O")
 		openProjectAction.triggered.connect(self.openProject)
-		saveProjectAction = QAction(QIcon("Resources/sample.png"), "Save Project", self)
+		saveProjectAction = QAction(Icons.SaveProject, "Save Project", self)
 		saveProjectAction.setShortcut("Ctrl+S")
 		saveProjectAction.triggered.connect(self.saveProject)
-		saveProjectAsAction = QAction(QIcon("Resources/sample.png"), "Save Project As...", self)
+		saveProjectAsAction = QAction(Icons.SaveProjectAs, "Save Project As...", self)
 		saveProjectAsAction.setShortcut("Ctrl+Shift+S")
 		saveProjectAsAction.triggered.connect(self.saveProjectAs)
 
-		importModelAction = QAction(QIcon("Resources/sample.png"), "Import Model", self)
+		importModelAction = QAction(Icons.ImportModel, "Import Model", self)
 		importModelAction.triggered.connect(self.importModel)
-		editModelAction = QAction(QIcon("Resources/sample.png"), "Edit Model", self)
+		editModelAction = QAction(Icons.EditModel, "Edit Model", self)
 		editModelAction.triggered.connect(self.editModel)
 
-		systemConfigurationAction = QAction(QIcon("Resources/sample.png"), "System Configuration", self)
+		systemConfigurationAction = QAction(Icons.SystemConfiguration, "System Configuration", self)
 		systemConfigurationAction.triggered.connect(self.systemConfiguration)
-		controllerConfigurationAction = QAction(QIcon("Resources/sample.png"), "Controller Manager", self)
+		controllerConfigurationAction = QAction(Icons.ControllerConfiguration, "Controller Manager", self)
 		controllerConfigurationAction.triggered.connect(self.controllerConfiguration)
 
-		generateAction = QAction(QIcon("Resources/sample.png"), "Generate Application", self)
+		generateAction = QAction(Icons.Generate, "Generate Application", self)
 		generateAction.triggered.connect(self.generateApplication)
-		regenerateAction = QAction(QIcon("Resources/sample.png"), "Regenerate Application", self)
+		regenerateAction = QAction(Icons.Regenerate, "Regenerate Application", self)
 		regenerateAction.triggered.connect(self.regenerateApplication)
 
 		# menu
@@ -126,8 +110,7 @@ class UTOPIIA(QMainWindow) :
 
 		# editors
 		self.projectExplorer = ProjectExplorer()
-		self.console = QTextEdit()
-		self.console.setReadOnly(True)
+		self.console = Console.getDefaultConsole()
 
 		# layout
 		verticalSplitter = QSplitter(QtCore.Qt.Vertical)
@@ -152,7 +135,7 @@ class UTOPIIA(QMainWindow) :
 	# private methods
 	def getContext(self) :
 		try :
-			file = open(os.path.join("Resources", "context.data"), "rb")
+			file = open(Paths.Context, "rb")
 			self.context = pickle.load(file)
 			file.close()
 		except :
@@ -160,7 +143,7 @@ class UTOPIIA(QMainWindow) :
 
 	def initProject(self) :
 		self.setWindowTitle("UTOPIIA - Untitled Project")
-		self.project["path"] = os.path.join("Resources", "temp_project")
+		self.project["path"] = Paths.TempProjectRoot
 		self.project["permanent"] = False
 		self.project["name"] = "Untitled"
 		self.project["model"] = None
@@ -177,7 +160,7 @@ class UTOPIIA(QMainWindow) :
 		self.controllerManager = None
 
 	def saveContext(self) :
-		file = open(os.path.join("Resources", "context.data"), "wb")
+		file = open(Paths.Context, "wb")
 		pickle.dump(self.context, file)
 		file.close()
 
@@ -191,7 +174,7 @@ class UTOPIIA(QMainWindow) :
 
 	def saveProjectFile(self) :
 		self.project["saved"] = True
-		file = open(os.path.join(self.project["path"], "project.utopiia"), "wb")
+		file = open(os.path.join(self.project["path"], Paths.Project), "wb")
 		pickle.dump(self.project, file)
 		file.close()
 
@@ -203,15 +186,15 @@ class UTOPIIA(QMainWindow) :
 
 	def loadProjectFile(self, path) :
 		try :
-			file = open(os.path.join(path, "project.utopiia"), "rb")
+			file = open(os.path.join(path, Paths.Project), "rb")
 			_project = pickle.load(file)
 			file.close()
 
 			_project["path"] = path
 			if _project["model"] :
-				_project["model"] = os.path.join(path, "model.xml")
+				_project["model"] = os.path.join(path, Paths.Model)
 			if _project["config"] :
-				_project["config"] = os.path.join(path, "sysconfig.data")
+				_project["config"] = os.path.join(path, Paths.SystemConfiguration)
 			self.setWindowTitle("UTOPIIA - " + _project["name"])
 		except :
 			self.errorMessage("%s\n\nInvalid Project File."%path)
@@ -223,9 +206,9 @@ class UTOPIIA(QMainWindow) :
 		return True
 
 	def importModelToProject(self, path) :
-		self.project["model"] = os.path.join(self.project["path"], "model.xml")
+		self.project["model"] = os.path.join(self.project["path"], Paths.Model)
 		shutil.copy(path, self.project["model"])
-		self.projectExplorer.setModelItem("Model.xml", self.editModel)
+		self.projectExplorer.setModelItem("Model", self.editModel)
 
 		if self.configurationEditor :
 			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
@@ -239,9 +222,9 @@ class UTOPIIA(QMainWindow) :
 			for _i in range(0, 5) :
 				data += file.readline()
 			file.close()
-			if data == CORRECT_UPPAAL_4_1 :
+			if data == Platform.CorrectUppaal41 :
 				return True
-			elif data == CORRECT_UPPAAL_4_0 :
+			elif data == Platform.CorrectUppaal40 :
 				return True
 			else :
 				return False
@@ -255,9 +238,9 @@ class UTOPIIA(QMainWindow) :
 			for _i in range(0, 2) :
 				data += file.readline()
 			file.close()
-			if data == CORRECT_MODEL_4_1 :
+			if data == Platform.CorrectModel41 :
 				return True
-			elif data[:len(CORRECT_MODEL_4_0)] == CORRECT_MODEL_4_0 :
+			elif data[:len(Platform.CorrectModel40)] == Platform.CorrectModel40 :
 				return True
 			else :
 				return False
@@ -267,7 +250,7 @@ class UTOPIIA(QMainWindow) :
 	def resetProjectExplorer(self) :
 		self.projectExplorer.setProject(self.project["name"])
 		if self.project["model"] :
-			self.projectExplorer.setModelItem("Model.xml", self.editModel)
+			self.projectExplorer.setModelItem("Model", self.editModel)
 		if self.project["config"] :
 			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
 
@@ -337,13 +320,9 @@ class UTOPIIA(QMainWindow) :
 		self.uppaalWorker.wait()
 
 	def generationTerminated(self, exitValue) :
-		self.printConsole("Build Finished.\n")
+		Console.print("Build Finished.\n")
 		self.status["generating"] = False
 		self.generateWorker.wait()
-
-	def printConsole(self, data) :
-		self.console.setPlainText(self.console.toPlainText() + data)
-		self.console.verticalScrollBar().setValue(self.console.verticalScrollBar().maximum())
 
 	# button callbacks
 	def newProject(self) :
@@ -396,7 +375,7 @@ class UTOPIIA(QMainWindow) :
 
 		if self.project["model"] :
 			tempPath = self.project["model"]
-			self.project["model"] = os.path.join(self.project["path"], "model.xml")
+			self.project["model"] = os.path.join(self.project["path"], Paths.Model)
 			shutil.copy(tempPath, self.project["model"])
 
 		if self.configurationEditor :
@@ -427,6 +406,7 @@ class UTOPIIA(QMainWindow) :
 			return False
 
 		self.importModelToProject(path[0])
+		Console.print(path[0])
 		return True
 
 	def editModel(self) :
@@ -453,7 +433,7 @@ class UTOPIIA(QMainWindow) :
 
 		if not self.project["model"] :
 			if self.newModelMessage() :
-				self.importModelToProject(os.path.join("Resources", "model.xml"))
+				self.importModelToProject(Paths.BasicModel)
 			else :
 				return False
 
@@ -464,7 +444,7 @@ class UTOPIIA(QMainWindow) :
 
 	def systemConfiguration(self) :
 		if not self.configurationEditor :
-			self.project["config"] = os.path.join(self.project["path"], "sysconfig.data")
+			self.project["config"] = os.path.join(self.project["path"], Paths.SystemConfiguration)
 			self.configurationEditor = ConfigurationEditor(self.project["model"], self.project["config"])
 			self.editorArea.addTab(self.configurationEditor, "Configuration Editor")
 			self.projectExplorer.setSystemConfigurationItem("System Configuration", self.systemConfiguration)
@@ -523,12 +503,12 @@ class UTOPIIA(QMainWindow) :
 		modelSourceFile.close()
 		modelHeaderFile.close()
 
-		if sysconfig["platform"] == LOCAL_PLATFORM and sysconfig["os"] == LOCAL_OS :
+		if sysconfig["platform"] == Platform.LocalPlatform and sysconfig["os"] == Platform.LocalOS :
 			localBuild = True
 		else :
 			localBuild = False
 
-		platformResourcePath = os.path.join(os.path.abspath("Resources"), sysconfig["platform"] + "_" + sysconfig["os"])
+		platformResourcePath = Paths.getPlatformResourcePath(sysconfig["platform"], sysconfig["os"])
 
 		if not localBuild :
 			# setting up toolchain cmake file
@@ -546,7 +526,7 @@ class UTOPIIA(QMainWindow) :
 
 		# setting up CMakeLists.txt file
 		cmakeBuild = {}
-		cmakeBuild["include"] = os.path.join(os.path.abspath("Resources"), "include")
+		cmakeBuild["include"] = os.path.join(Paths.BuildResource, "include")
 		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
 		libListFile = open(os.path.join(platformResourcePath, "liblist.txt"), "r")
 		libListData = libListFile.read()
@@ -560,7 +540,7 @@ class UTOPIIA(QMainWindow) :
 				cmakeBuild["lib"] = cmakeBuild["lib"] + lib + " "
 		cmakeBuild["lib"] = cmakeBuild["lib"].strip()
 
-		cmakePath = os.path.join("Resources", "CMakeLists.txt")
+		cmakePath = os.path.join(Paths.BuildResource, "CMakeLists.txt")
 		cmakeFile = open(cmakePath, "r")
 		cmakeData = cmakeFile.read()
 		cmakeFile.close()
@@ -573,7 +553,7 @@ class UTOPIIA(QMainWindow) :
 		cmakeFile.close()
 
 		# copy uppaal engine code
-		resourceSourcePath = os.path.join("Resources", "src")
+		resourceSourcePath = os.path.join(Paths.BuildResource, "src")
 		shutil.copy(os.path.join(resourceSourcePath, "main.c"), os.path.join(self.project["build"], "main.c"))
 		shutil.copy(os.path.join(resourceSourcePath, "uppaal.c"), os.path.join(self.project["build"], "uppaal.c"))
 
@@ -623,8 +603,7 @@ class UPPAALThread(QtCore.QThread) :
 		self.signal.connect(parent.uppaalTerminated)
 
 	def run(self) :
-		# platform specific
-		exitValue = os.system(self.utopiia.context["uppaal"] + " " + self.utopiia.project["model"])
+		exitValue = os.system(Platform.uppaalCommand(self.utopiia.context["uppaal"], self.utopiia.project["model"]))
 		self.signal.emit(exitValue)
 
 class GenerateApplicationThread(QtCore.QThread) :
@@ -634,7 +613,7 @@ class GenerateApplicationThread(QtCore.QThread) :
 	def __init__(self, parent, buildPath, isLocal=False) :
 		super().__init__(parent)
 		self.exitSignal.connect(parent.generationTerminated)
-		self.consoleSignal.connect(parent.printConsole)
+		self.consoleSignal.connect(Console.print)
 
 		self.buildPath = buildPath
 		self.isLocal = isLocal
@@ -643,14 +622,10 @@ class GenerateApplicationThread(QtCore.QThread) :
 		originalPath = os.getcwd()
 		os.chdir(self.buildPath)
 
-		# platform specific
-		if self.isLocal :
-			file = os.popen("cmake .")
-		else :
-			file = os.popen("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
-		self.sendDataToConsole(file)
-		file = os.popen("make")
-		self.sendDataToConsole(file)
+		commands = Platform.buildCommand(self.isLocal)
+		for command in commands :
+			file = os.popen(command)
+			self.sendDataToConsole(file)
 
 		os.chdir(originalPath)
 		self.exitSignal.emit(0)

@@ -1,7 +1,8 @@
 __pycache__
 *.pyc
 
-sample.png
-context.data
+*.png
 *.temp
+*.data
 project.utopiia
+

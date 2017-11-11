@@ -2,8 +2,10 @@ from xml.etree.ElementTree import parse
 
 import os
 
+from UI.Core import Paths
+
 def readPlatformList() :
-	platformListXML = parse(os.path.join("Resources", "platform_list.xml"))
+	platformListXML = parse(Paths.PlatformList)
 	root = platformListXML.getroot()
 
 	platformList = {}

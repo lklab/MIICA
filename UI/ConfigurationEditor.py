@@ -1,8 +1,10 @@
 from PyQt5.QtWidgets import (QWidget, QMainWindow, QLayout, QVBoxLayout,
 	QHBoxLayout, QGridLayout, QListWidget, QListWidgetItem, QLabel,
 	QLineEdit, QComboBox, QAction, QMessageBox)
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+
+from UI.Core import Paths
+from UI.Core import Icons
 
 import os, pickle
 import Uppaal.UppaalProjectParser as UppaalProjectParser
@@ -82,7 +84,7 @@ class IOConfigurationItem(ConfigurationItem) :
 		# layout
 		mainLayout = QGridLayout(self)
 		mainLayout.addWidget(QLabel("Model Variable"), 1, 1)
-		mainLayout.addWidget(QLabel("I/O Address"), 1, 2)
+		mainLayout.addWidget(QLabel("Network Address"), 1, 2)
 		mainLayout.addWidget(QLabel("Direction"), 1, 3)
 		mainLayout.addWidget(self.variableSelect, 2, 1)
 		mainLayout.addWidget(self.addressEdit, 2, 2)
@@ -119,9 +121,9 @@ class ConfigurationList(QMainWindow) :
 		self.dataList = None
 
 		# actions
-		insertAction = QAction(QIcon("Resources/sample.png"), "Insert", self)
+		insertAction = QAction(Icons.Insert, "Insert", self)
 		insertAction.triggered.connect(self.insertItem)
-		removeAction = QAction(QIcon("Resources/sample.png"), "Remove", self)
+		removeAction = QAction(Icons.Remove, "Remove", self)
 		removeAction.triggered.connect(self.removeItem)
 
 		# layout
@@ -136,7 +138,7 @@ class ConfigurationList(QMainWindow) :
 
 	def insertItem(self) :
 		if not self.dataList :
-			self.errorMessage("There is no model file.")
+			QMessageBox.critical(self, "Error", "There is no model file.")
 			return None
 
 		item = QListWidgetItem(self.listLayout)
@@ -186,9 +188,6 @@ class ConfigurationList(QMainWindow) :
 	def checkSaved(self) :
 		return self.saved
 
-	def errorMessage(self, message) :
-		QMessageBox.critical(self, "Error", message)
-
 class ConfigurationEditor(QMainWindow) :
 	def __init__(self, modelPath, configPath) :
 		super().__init__()
@@ -196,7 +195,7 @@ class ConfigurationEditor(QMainWindow) :
 		self.platformList = ResourceManager.readPlatformList()
 		self.saved = True
 
-		refreshAction = QAction(QIcon("Resources/sample.png"), "Refresh", self)
+		refreshAction = QAction(Icons.Refresh, "Refresh", self)
 		refreshAction.triggered.connect(self.refreshModel)
 		toolbar = self.addToolBar("")
 		toolbar.addAction(refreshAction)
@@ -324,7 +323,7 @@ class ConfigurationEditor(QMainWindow) :
 				self.taskConfiguration.initByData(templateList, self.configurationData["taskList"])
 				self.ioConfiguration.initByData(variableList, self.configurationData["ioList"])
 		else :
-			self.errorMessage("There is no model file.")
+			QMessageBox.critical(self, "Error", "There is no model file.")
 
 	def refreshModel(self) :
 		try :
@@ -338,7 +337,7 @@ class ConfigurationEditor(QMainWindow) :
 			self.taskConfiguration.refresh(templateList)
 			self.ioConfiguration.refresh(variableList)
 		else :
-			self.errorMessage("There is no model file.")
+			QMessageBox.critical(self, "Error", "There is no model file.")
 
 		self.saved = False
 
@@ -357,7 +356,7 @@ class ConfigurationEditor(QMainWindow) :
 		configurationData["taskList"] = self.taskConfiguration.getData()
 		configurationData["ioList"] = self.ioConfiguration.getData()
 
-		file = open(os.path.join(projectPath, "sysconfig.data"), "wb")
+		file = open(os.path.join(projectPath, Paths.SystemConfiguration), "wb")
 		pickle.dump(configurationData, file)
 		file.close()
 
@@ -367,6 +366,3 @@ class ConfigurationEditor(QMainWindow) :
 		self.modelPath = modelPath
 		self.configPath = configPath
 		self.refreshModel()
-
-	def errorMessage(self, message) :
-		QMessageBox.critical(self, "Error", message)

@@ -6,7 +6,7 @@ class Paths() :
 	Resources = "Resources"
 	ResourcesAbs = os.path.abspath(Resources)
 	
-	Icon = os.path.join(Resources, "Icons")
+	Icon = os.path.join(Resources, "icons")
 
 	Project = "project.utopiia"
 	Model = "Model.xml"

@@ -21,8 +21,8 @@ class Paths() :
 	BuildResource = os.path.join(ResourcesAbs, "build")
 	PlatformList = os.path.join(BuildResource, "platform_list.xml")
 
-	def getPlatformResourcePath(platform, os) :
-		return os.path.join(ResourcesAbs, platform + "_" + os)
+	def getPlatformResourcePath(platform, targetOS) :
+		return os.path.join(Paths.BuildResource, platform + "_" + targetOS)
 
 class Icons() :
 	def init() :

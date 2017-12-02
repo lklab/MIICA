@@ -125,13 +125,18 @@ class ControllerManager(QMainWindow) :
 
 	def sendApplication(self) :
 		Console.print("Transferring application...\n")
-		self.controller.sendApplication(os.path.join(self.projectPath, "build", "PLC_APP"))
+		if not self.controller.sendApplication(os.path.join(self.projectPath, "build", "PLC_APP")) :
+			Console.print("Transfer failed.\n")
 
 	def runApplication(self) :
-		self.controller.runApplication()
+		Console.print("Start the application...\n")
+		if not self.controller.runApplication() :
+			Console.print("Application start failed.\n")
 
 	def stopApplication(self) :
-		self.controller.stopApplication()
+		Console.print("Stop the application...\n")
+		if not self.controller.stopApplication() :
+			Console.print("Application stop failed.\n")
 
 	# callbacks
 	def connectRequestProcessed(self, result) :
@@ -141,6 +146,10 @@ class ControllerManager(QMainWindow) :
 			self.statusEdit.setText("Connection Failed")
 
 	def dataReceived(self, command, value, data) :
+		if not command :
+			self.statusEdit.setText("Disconnected")
+			return
+
 		if command == Controller.CMD_XMIT_APP_RES :
 			if value == Controller.VAL_SUCCESS :
 				Console.print("Transfer completed successfully.\n")

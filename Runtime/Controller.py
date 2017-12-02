@@ -42,6 +42,9 @@ class Controller() :
 		if not self.status["connected"] :
 			return False
 
+		if self.dataReceivedCallback :
+			self.dataReceivedCallback(None, None, None)
+
 		if self.receiverThread :
 			self.receiverThread.stop()
 			self.receiverThread.wait()
@@ -108,6 +111,7 @@ class Controller() :
 	def dataReceived(self, data) :
 		if not data :
 			self.disconnect()
+			return
 
 		(command, value) = self.getCommandFromData(data)
 
@@ -121,7 +125,6 @@ class Controller() :
 
 		try :
 			self.socket.send(bCommand + bValue)
-			print("send %d"%command)
 		except :
 			self.disconnect()
 			return False

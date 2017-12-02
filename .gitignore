@@ -3,9 +3,10 @@ __pycache__
 
 *.temp
 *.data
-build
 project.utopiia
+Resources/sample_project/build/
 
 ARM_Linux
+x86_64_Linux
 test
 

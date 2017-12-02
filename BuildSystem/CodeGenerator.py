@@ -326,42 +326,46 @@ def generateLocationDeclaration(template) :
 	return code
 
 def generateContextDeclaration(template, task) :
-	code = template["name"] + "Context " + template["name"] + "_context_" + str(task["id"]) + " = { \n\t"
-	if template["variables"] :
-		for var in template["variables"] :
-			if var["type"] != "chan" and var["initial"] :
-				code += var["initial"] + ",\n\t"
-			else :
-				code += "0,\n\t"
-	code = code[:-3] + "\n};\n"
+	code = ""
+
+	for backup in ["", "_backup"] :
+		code += template["name"] + "Context " + template["name"] + "_context_" + str(task["id"]) + backup + " = { \n\t"
+		if template["variables"] :
+			for var in template["variables"] :
+				if var["type"] != "chan" and var["initial"] :
+					code += var["initial"] + ",\n\t"
+				else :
+					code += "0,\n\t"
+		code = code[:-3] + "\n};\n\n"
 
 	codeName = template["name"] + "_" + str(task["id"])
 	task["codeName"] = codeName
 	code += "Template " + codeName + " = {\n\t"
 	code += "&" + template["name"] + "_context_" + str(task["id"]) + ",\n\t"
-	code += "NULL,\n\t"
+	code += "&" + template["name"] + "_context_" + str(task["id"]) + "_backup,\n\t"
 	code += "sizeof(" + template["name"] + "Context),\n\t"
-	code += "&" + template["locations"][template["initial"]]["codeName"] + ",\n\tNULL\n};\n"
+	code += "&" + template["locations"][template["initial"]]["codeName"] + ",\n\tNULL\n};\n\n"
 	return code
 
 def generateProgramCode(system, taskList) :
 	code = "Template* task_list[] = {\n\t"
 	for task in taskList :
 		code += "&" + task["codeName"] + ",\n\t"
-	code += "NULL\n};\n"
+	code += "NULL\n};\n\n"
 
-	code += "ProgramContext program_context = { \n\t"
-	for var in system["variables"] :
-		if var["type"] != "chan" :
-			if var["initial"] :
-				code += var["initial"] + ",\n\t"
-			else :
-				code += "0,\n\t"
-	code = code[:-3] + "\n};\n\n"
+	for backup in ["", "_backup"] :
+		code += "ProgramContext program_context" + backup + " = { \n\t"
+		for var in system["variables"] :
+			if var["type"] != "chan" :
+				if var["initial"] :
+					code += var["initial"] + ",\n\t"
+				else :
+					code += "0,\n\t"
+		code = code[:-3] + "\n};\n\n"
 
 	code += "Program program = {\n\t"
 	code += "&program_context,\n\t"
-	code += "NULL,\n\t"
+	code += "&program_context_backup,\n\t"
 	code += "sizeof(ProgramContext),\n\t"
 	code += "(Template**)&task_list,\n\t"
 	code += "0LL\n};\n\n"

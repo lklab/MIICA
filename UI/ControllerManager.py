@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QMainWindow, QLayout, QGridLayout, QLineEdit, QLabel, QAction
+from PyQt5.QtWidgets import (QWidget, QMainWindow, QLayout, QGridLayout, QVBoxLayout,
+	QLineEdit, QLabel, QAction)
 
 from UI.Core import Paths
 from UI.Core import Icons
+from UI.Core import Console
 
 import pickle
 import os
@@ -20,8 +22,8 @@ class ControllerManager(QMainWindow) :
 		connectAction.triggered.connect(self.connect)
 		disconnectAction = QAction(Icons.Disconnect, "Disconnect", self)
 		disconnectAction.triggered.connect(self.disconnect)
-		transmitApplicationAction = QAction(Icons.Transmit, "Transmit Application", self)
-		transmitApplicationAction.triggered.connect(self.transmitApplication)
+		sendApplicationAction = QAction(Icons.Send, "Send Application", self)
+		sendApplicationAction.triggered.connect(self.sendApplication)
 		runAction = QAction(Icons.Run, "Run", self)
 		runAction.triggered.connect(self.runApplication)
 		stopAction = QAction(Icons.Stop, "Stop", self)
@@ -31,7 +33,7 @@ class ControllerManager(QMainWindow) :
 		toolbar = self.addToolBar("")
 		toolbar.addAction(connectAction)
 		toolbar.addAction(disconnectAction)
-		toolbar.addAction(transmitApplicationAction)
+		toolbar.addAction(sendApplicationAction)
 		toolbar.addAction(runAction)
 		toolbar.addAction(stopAction)
 
@@ -40,17 +42,31 @@ class ControllerManager(QMainWindow) :
 		self.addressEdit.textEdited.connect(self.changed)
 		self.portEdit = QLineEdit()
 		self.portEdit.textEdited.connect(self.changed)
+		self.statusEdit = QLineEdit()
+		self.statusEdit.setReadOnly(True)
+		self.statusEdit.setText("Disconnected")
 
 		# layout
 		mainwidget = QWidget()
-		mainLayout = QGridLayout()
+		mainLayout = QVBoxLayout()
+		addressLayout = QGridLayout()
+		statusLayout = QGridLayout()
 
-		mainLayout.addWidget(QLabel("IP Address"), 1, 1)
-		mainLayout.addWidget(QLabel("Port"), 1, 2)
-		mainLayout.addWidget(self.addressEdit, 2, 1)
-		mainLayout.addWidget(self.portEdit, 2, 2)
+		addressLayout.addWidget(QLabel("IP Address"), 1, 1)
+		addressLayout.addWidget(QLabel("Port"), 1, 2)
+		addressLayout.addWidget(self.addressEdit, 2, 1)
+		addressLayout.addWidget(self.portEdit, 2, 2)
 
+		statusLayout.addWidget(QLabel("Controller Status"), 1, 1)
+		statusLayout.addWidget(self.statusEdit, 2, 1)
+
+		mainLayout.addLayout(addressLayout)
+		mainLayout.addLayout(statusLayout)
+		
+		statusLayout.setContentsMargins(0, 20, 0, 0)
+		addressLayout.setSizeConstraint(QLayout.SetFixedSize)
 		mainLayout.setSizeConstraint(QLayout.SetFixedSize)
+
 		mainwidget.setLayout(mainLayout)
 		self.setCentralWidget(mainwidget)
 
@@ -98,15 +114,18 @@ class ControllerManager(QMainWindow) :
 
 	# action handlers
 	def connect(self) :
+		self.statusEdit.setText("Connecting...")
 		self.controller.connect(self.addressEdit.text(), int(self.portEdit.text()),
 			self.connectRequestProcessed, self.dataReceived)
 
 	def disconnect(self) :
 		self.controller.stopApplication()
 		self.controller.disconnect()
+		self.statusEdit.setText("Disconnected")
 
-	def transmitApplication(self) :
-		self.controller.transmitApplication(os.path.join(self.projectPath, "build", "PLC_APP"))
+	def sendApplication(self) :
+		Console.print("Transferring application...\n")
+		self.controller.sendApplication(os.path.join(self.projectPath, "build", "PLC_APP"))
 
 	def runApplication(self) :
 		self.controller.runApplication()
@@ -117,16 +136,25 @@ class ControllerManager(QMainWindow) :
 	# callbacks
 	def connectRequestProcessed(self, result) :
 		if result :
-			print("connected!") # TODO : test
+			self.statusEdit.setText("Connected")
 		else :
-			print("conntection failed!") # TODO : test
+			self.statusEdit.setText("Connection Failed")
 
 	def dataReceived(self, command, value, data) :
 		if command == Controller.CMD_XMIT_APP_RES :
-			print("Transmit result %d"%value) # TODO : test
+			if value == Controller.VAL_SUCCESS :
+				Console.print("Transfer completed successfully.\n")
+			elif value == Controller.VAL_FAILED :
+				Console.print("Transfer failed.\n")
 		elif command == Controller.CMD_RUN_RES :
-			print("Run result %d"%value) # TODO : test
+			if value == Controller.VAL_SUCCESS :
+				self.statusEdit.setText("Running")
+			elif value == Controller.VAL_FAILED :
+				Console.print("Application execution failed.\n")
 		elif command == Controller.CMD_STOP_RES :
-			print("Stop result %d"%value) # TODO : test
+			if value == Controller.VAL_SUCCESS :
+				self.statusEdit.setText("Connected")
+			elif value == Controller.VAL_FAILED :
+				Console.print("Application stop has failed.\n")
 		else :
-			print("unknown : %d, %d"%(command, value))
+			Console.print("Unknown response from controller : %d, %d\n"%(command, value))

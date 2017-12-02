@@ -19,25 +19,25 @@ int main(void)
 	int i, ret;
 
 	ret = io_init();
-	if(ret < 0)
+	if(ret != 0)
 	{
 		io_cleanup();
-		os_exit_process(-1);
+		os_exit(1);
 	}
 
 	for(i = 0; mapping_list[i].variable != NULL; i++)
 	{
 		ret = io_mapping(mapping_list[i].variable, mapping_list[i].size,
 			mapping_list[i].address, mapping_list[i].direction);
-		if(ret < 0)
+		if(ret != 0)
 		{
 			io_cleanup();
-			os_exit_process(-1);
+			os_exit(1);
 		}
 	}
 
 	uppaal_init();
-	os_register_interrupt_handler(interrupt_handler);
+	os_signal(interrupt_handler);
 
 	os_task_init(&task, task_proc, PERIOD);
 	os_task_start(&task);
@@ -47,10 +47,10 @@ int main(void)
 
 static void task_proc(void)
 {
-	if(io_exchange() < 0)
-		cleanup_and_exit(-1);
-	if(uppaal_step() < 0)
-		cleanup_and_exit(-1);
+	if(io_exchange() != 0)
+		cleanup_and_exit(1);
+	if(uppaal_step() != 0)
+		cleanup_and_exit(1);
 }
 
 static void interrupt_handler(void)
@@ -63,5 +63,5 @@ static void cleanup_and_exit(int value)
 	os_task_stop(&task);
 	io_cleanup();
 	uppaal_cleanup();
-	os_exit_process(value);
+	os_exit(value);
 }

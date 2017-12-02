@@ -21,13 +21,6 @@ static int check_validation_for_next_period();
 
 int uppaal_init(void)
 {
-	int i;
-
-	/* allocate context backup memory */
-	program.context_backup = os_malloc(program.context_size);
-	for(i = 0; program.tasks[i] != NULL; i++)
-		program.tasks[i] -> context_backup = os_malloc(program.tasks[i] -> context_size);
-
 	return 0;
 }
 
@@ -37,17 +30,17 @@ int uppaal_step(void)
 
 	/* dataExchanged channel processing */
 	if(!check_and_take_broadcast_channel(NULL, NULL))
-		return -1; /* deadlock condition */
+		return 1; /* deadlock condition */
 
 	do
 	{
 		if(!committed_location_processing())
-			return -1; /* deadlock condition */
+			return 1; /* deadlock condition */
 	}
 	while(normal_location_processing());
 
 	if(!check_validation_for_next_period())
-		return -1; /* deadlock condition */
+		return 1; /* deadlock condition */
 
 	program.program_clock++;
 
@@ -56,13 +49,6 @@ int uppaal_step(void)
 
 int uppaal_cleanup(void)
 {
-	int i;
-
-	/* free context backup memory */
-	os_free(program.context_backup);
-	for(i = 0; program.tasks[i] != NULL; i++)
-		os_free(program.tasks[i] -> context_backup);
-
 	return 0;
 }
 

@@ -57,7 +57,7 @@ class Controller() :
 		self.status["connected"] = False
 		return True
 
-	def transmitApplication(self, appPath) :
+	def sendApplication(self, appPath) :
 		if not self.status["connected"] or self.status["running"] :
 			return False
 

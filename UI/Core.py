@@ -48,7 +48,7 @@ class Icons() :
 
 		Icons.Connect = QIcon(os.path.join(Paths.Icon, "connect.png"))
 		Icons.Disconnect = QIcon(os.path.join(Paths.Icon, "disconnect.png"))
-		Icons.Transmit = QIcon(os.path.join(Paths.Icon, "transmit.png"))
+		Icons.Send = QIcon(os.path.join(Paths.Icon, "transmit.png"))
 		Icons.Run = QIcon(os.path.join(Paths.Icon, "run.png"))
 		Icons.Stop = QIcon(os.path.join(Paths.Icon, "stop.png"))
 

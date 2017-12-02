@@ -534,10 +534,11 @@ class UTOPIIA(QMainWindow) :
 		cmakeBuild["lib"] = "os "
 		for libPair in libListData.split("\n") :
 			_data = libPair.split("=")
-			title = _data[0].strip()
-			lib = _data[1].strip()
-			if title == "default" or title == sysconfig["network"] :
-				cmakeBuild["lib"] = cmakeBuild["lib"] + lib + " "
+			if len(_data) == 2 :
+				title = _data[0].strip()
+				lib = _data[1].strip()
+				if title == "default" or title == sysconfig["network"] :
+					cmakeBuild["lib"] = cmakeBuild["lib"] + lib + " "
 		cmakeBuild["lib"] = cmakeBuild["lib"].strip()
 
 		cmakePath = os.path.join(Paths.BuildResource, "CMakeLists.txt")

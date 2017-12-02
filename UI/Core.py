@@ -26,31 +26,31 @@ class Paths() :
 
 class Icons() :
 	def init() :
-		Icons.Project = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.Project = QIcon(os.path.join(Paths.Icon, "project.png"))
 
-		Icons.NewProject = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.OpenProject = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.SaveProject = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.SaveProjectAs = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.NewProject = QIcon(os.path.join(Paths.Icon, "new_project.png"))
+		Icons.OpenProject = QIcon(os.path.join(Paths.Icon, "open_project.png"))
+		Icons.SaveProject = QIcon(os.path.join(Paths.Icon, "save_project.png"))
+		Icons.SaveProjectAs = QIcon(os.path.join(Paths.Icon, "save_project_as.png"))
 
-		Icons.ImportModel = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.EditModel = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.ImportModel = QIcon(os.path.join(Paths.Icon, "import_model.png"))
+		Icons.EditModel = QIcon(os.path.join(Paths.Icon, "edit_model.png"))
 
-		Icons.SystemConfiguration = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.ControllerConfiguration = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.SystemConfiguration = QIcon(os.path.join(Paths.Icon, "configuration.png"))
+		Icons.ControllerConfiguration = QIcon(os.path.join(Paths.Icon, "controller.png"))
 
-		Icons.Generate = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Regenerate = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.Generate = QIcon(os.path.join(Paths.Icon, "generate.png"))
+		Icons.Regenerate = QIcon(os.path.join(Paths.Icon, "regenerate.png"))
 
-		Icons.Refresh = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Insert = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Remove = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.Refresh = QIcon(os.path.join(Paths.Icon, "refresh.png"))
+		Icons.Insert = QIcon(os.path.join(Paths.Icon, "insert.png"))
+		Icons.Remove = QIcon(os.path.join(Paths.Icon, "delete.png"))
 
-		Icons.Connect = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Disconnect = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Transmit = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Run = QIcon(os.path.join(Paths.Icon, "sample.png"))
-		Icons.Stop = QIcon(os.path.join(Paths.Icon, "sample.png"))
+		Icons.Connect = QIcon(os.path.join(Paths.Icon, "connect.png"))
+		Icons.Disconnect = QIcon(os.path.join(Paths.Icon, "disconnect.png"))
+		Icons.Transmit = QIcon(os.path.join(Paths.Icon, "transmit.png"))
+		Icons.Run = QIcon(os.path.join(Paths.Icon, "run.png"))
+		Icons.Stop = QIcon(os.path.join(Paths.Icon, "stop.png"))
 
 class Platform() :
 	LocalPlatform = "x86_64"

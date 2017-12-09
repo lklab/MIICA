@@ -403,10 +403,10 @@ class UTOPIIA(QMainWindow) :
 			self.saveContext()
 
 			path = QFileDialog.getExistingDirectory(self, "Select UPPAAL Path", "./")
-			if not path[0] :
+			if not path :
 				return False
 
-			self.context["uppaal"] = path[0]
+			self.context["uppaal"] = path
 			self.saveContext()
 
 		if not Platform.checkUPPAALfile(self.context["uppaal"]) :
@@ -499,7 +499,8 @@ class UTOPIIA(QMainWindow) :
 			toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
 			toolchainCmakeFile = open(toolchainCmakePath, 'r')
 			toolchainCmakeData = toolchainCmakeFile.read()
-			toolchainCmakeData = toolchainCmakeData%({"path" : (os.path.join(platformResourcePath, ""))})
+			toolchainCmakeData = toolchainCmakeData%({"path" : \
+				(os.path.join(platformResourcePath, "").replace("\\", "/"))})
 			toolchainCmakeFile.close()
 
 			# create toolchain cmake file
@@ -510,8 +511,8 @@ class UTOPIIA(QMainWindow) :
 
 		# setting up CMakeLists.txt file
 		cmakeBuild = {}
-		cmakeBuild["include"] = os.path.join(Paths.BuildResource, "include")
-		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
+		cmakeBuild["include"] = os.path.join(Paths.BuildResource, "include").replace("\\", "/")
+		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib").replace("\\", "/")
 		libListFile = open(os.path.join(platformResourcePath, "liblist.txt"), "r")
 		libListData = libListFile.read()
 		libListFile.close()

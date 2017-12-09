@@ -126,10 +126,10 @@ class Platform() :
 			return command
 
 		elif Platform.LocalOS == "Windows" :
-			cmakePath = os.path.join(Paths.BuildResource, "bin", "cmake.exe")
-			mingw32Path = os.path.join(Paths.BuildResource, "bin", "mingw32-make.exe")
+			cmakePath = os.path.join(Paths.BuildResource, "bin", "cmake", "bin", "cmake.exe")
+			mingw32Path = os.path.join(Paths.BuildResource, "bin", "mingw-make", "mingw32-make.exe")
 			command.append(cmakePath + " -DCMAKE_MAKE_PROGRAM=\"" + mingw32Path + \
-				"\" -DCMAKE_TOOLCHAIN_FILE=../toolchain.arm.cmake -G \"MinGW Makefiles\"  .")
+				"\" -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake -G \"MinGW Makefiles\"  .")
 			command.append(cmakePath + " --build .")
 			return command
 

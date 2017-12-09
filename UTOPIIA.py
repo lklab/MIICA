@@ -215,22 +215,6 @@ class UTOPIIA(QMainWindow) :
 
 		self.project["saved"] = False
 
-	def checkUPPAALfile(self, path) :
-		try :
-			file = open(path, "rt")
-			data = ""
-			for _i in range(0, 5) :
-				data += file.readline()
-			file.close()
-			if data == Platform.CorrectUppaal41 :
-				return True
-			elif data == Platform.CorrectUppaal40 :
-				return True
-			else :
-				return False
-		except :
-			return False
-
 	def checkModelfile(self, path) :
 		try :
 			file = open(path, "rt")
@@ -414,18 +398,18 @@ class UTOPIIA(QMainWindow) :
 			self.informationMessage("UPPAAL is already running.")
 			return False
 
-		if not self.context["uppaal"] or not self.checkUPPAALfile(self.context["uppaal"]) :
+		if not self.context["uppaal"] or not Platform.checkUPPAALfile(self.context["uppaal"]) :
 			self.context["uppaal"] = None
 			self.saveContext()
 
-			path = QFileDialog.getOpenFileName(self, "Select UPPAAL Path", "./")
+			path = QFileDialog.getExistingDirectory(self, "Select UPPAAL Path", "./")
 			if not path[0] :
 				return False
 
 			self.context["uppaal"] = path[0]
 			self.saveContext()
 
-		if not self.checkUPPAALfile(self.context["uppaal"]) :
+		if not Platform.checkUPPAALfile(self.context["uppaal"]) :
 			self.errorMessage("%s\n\nInvalid UPPAAL Executable."%self.context["uppaal"])
 			self.context["uppaal"] = None
 			self.saveContext()

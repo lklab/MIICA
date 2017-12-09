@@ -195,6 +195,8 @@ class UTOPIIA(QMainWindow) :
 				_project["model"] = os.path.join(path, Paths.Model)
 			if _project["config"] :
 				_project["config"] = os.path.join(path, Paths.SystemConfiguration)
+			if _project["build"] :
+				_project["build"] = os.path.join(path, "build")
 			self.setWindowTitle("UTOPIIA - " + _project["name"])
 		except :
 			self.errorMessage("%s\n\nInvalid Project File."%path)

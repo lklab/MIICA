@@ -158,10 +158,11 @@ class ConfigurationList(QMainWindow) :
 
 	def initByData(self, dataList, configList) :
 		self.dataList = dataList
-		for config in configList :
-			itemWidget = self.insertItem()
-			if itemWidget :
-				itemWidget.setData(config)
+		if configList :
+			for config in configList :
+				itemWidget = self.insertItem()
+				if itemWidget :
+					itemWidget.setData(config)
 		self.saved = True
 
 	def refresh(self, dataList) :
@@ -319,9 +320,13 @@ class ConfigurationEditor(QMainWindow) :
 		if self.model :
 			templateList = [template["name"] for template in self.model["templates"]]
 			variableList = [variable["name"] for variable in self.model["variables"] if variable["type"] != "clock" and variable["type"] != "chan"]
+
 			if self.configurationData :
 				self.taskConfiguration.initByData(templateList, self.configurationData["taskList"])
 				self.ioConfiguration.initByData(variableList, self.configurationData["ioList"])
+			else :
+				self.taskConfiguration.initByData(templateList, None)
+				self.ioConfiguration.initByData(variableList, None)
 		else :
 			QMessageBox.critical(self, "Error", "There is no model file.")
 

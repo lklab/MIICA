@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtGui import QIcon
-import os
+import os, platform
 
 class Paths() :
 	Resources = "Resources"
@@ -21,8 +21,8 @@ class Paths() :
 	BuildResource = os.path.join(ResourcesAbs, "build")
 	PlatformList = os.path.join(BuildResource, "platform_list.xml")
 
-	def getPlatformResourcePath(platform, targetOS) :
-		return os.path.join(Paths.BuildResource, platform + "_" + targetOS)
+	def getPlatformResourcePath(targetPlatform, targetOS) :
+		return os.path.join(Paths.BuildResource, targetPlatform + "_" + targetOS)
 
 class Icons() :
 	def init() :
@@ -53,8 +53,17 @@ class Icons() :
 		Icons.Stop = QIcon(os.path.join(Paths.Icon, "stop.png"))
 
 class Platform() :
-	LocalPlatform = "x86_64"
-	LocalOS = "Linux"
+	if platform.machine() == "AMD64" or platform.machine() == "x86_64" :
+		LocalPlatform = "x86_64"
+	else :
+		LocalPlatform = "x86_64" # default
+
+	if platform.system() == "Linux" :
+		LocalOS = "Linux"
+	elif platform.system() == "Windows" :
+		LocalOS = "Windows"
+	else :
+		LocalOS = "Linux" # default
 
 	CorrectUppaal41 = \
 """#!/usr/bin/env bash
@@ -80,18 +89,52 @@ class Platform() :
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' \
 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'>\
 <nta><declaration>"""
+
+	def checkUPPAALfile(path) :
+		try :
+			file = open(os.path.join(path, "uppaal"), "rt")
+			data = ""
+			for _i in range(0, 5) :
+				data += file.readline()
+			file.close()
+			if data == Platform.CorrectUppaal41 :
+				return True
+			elif data == Platform.CorrectUppaal40 :
+				return True
+			else :
+				return False
+		except :
+			return False
 	
 	def uppaalCommand(UppaalPath, ModelPath) :
-		return UppaalPath + " " + ModelPath
+		if Platform.LocalOS == "Linux" :
+			return UppaalPath + "/uppaal " + ModelPath
+		elif Platform.LocalOS == "Windows" :
+			return "java -jar " + UppaalPath + "\\uppaal.jar " + ModelPath
+		else :
+			return ""
 
 	def buildCommand(isLocal) :
 		command = []
-		if isLocal :
-			command.append("cmake .")
+
+		if Platform.LocalOS == "Linux" :
+			if isLocal :
+				command.append("cmake .")
+			else :
+				command.append("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
+			command.append("make")
+			return command
+
+		elif Platform.LocalOS == "Windows" :
+			cmakePath = os.path.join(Paths.BuildResource, "bin", "cmake", "bin", "cmake.exe")
+			mingw32Path = os.path.join(Paths.BuildResource, "bin", "mingw-make", "mingw32-make.exe")
+			command.append(cmakePath + " -DCMAKE_MAKE_PROGRAM=\"" + mingw32Path + \
+				"\" -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake -G \"MinGW Makefiles\"  .")
+			command.append(cmakePath + " --build .")
+			return command
+
 		else :
-			command.append("cmake -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake .")
-		command.append("make")
-		return command
+			return command
 
 class Console() :
 	console = None

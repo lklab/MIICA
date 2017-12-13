@@ -195,6 +195,8 @@ class UTOPIIA(QMainWindow) :
 				_project["model"] = os.path.join(path, Paths.Model)
 			if _project["config"] :
 				_project["config"] = os.path.join(path, Paths.SystemConfiguration)
+			if _project["build"] :
+				_project["build"] = os.path.join(path, "build")
 			self.setWindowTitle("UTOPIIA - " + _project["name"])
 		except :
 			self.errorMessage("%s\n\nInvalid Project File."%path)
@@ -214,22 +216,6 @@ class UTOPIIA(QMainWindow) :
 			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
 
 		self.project["saved"] = False
-
-	def checkUPPAALfile(self, path) :
-		try :
-			file = open(path, "rt")
-			data = ""
-			for _i in range(0, 5) :
-				data += file.readline()
-			file.close()
-			if data == Platform.CorrectUppaal41 :
-				return True
-			elif data == Platform.CorrectUppaal40 :
-				return True
-			else :
-				return False
-		except :
-			return False
 
 	def checkModelfile(self, path) :
 		try :
@@ -417,18 +403,18 @@ class UTOPIIA(QMainWindow) :
 			self.informationMessage("UPPAAL is already running.")
 			return False
 
-		if not self.context["uppaal"] or not self.checkUPPAALfile(self.context["uppaal"]) :
+		if not self.context["uppaal"] or not Platform.checkUPPAALfile(self.context["uppaal"]) :
 			self.context["uppaal"] = None
 			self.saveContext()
 
-			path = QFileDialog.getOpenFileName(self, "Select UPPAAL Path", "./")
-			if not path[0] :
+			path = QFileDialog.getExistingDirectory(self, "Select UPPAAL Path", "./")
+			if not path :
 				return False
 
-			self.context["uppaal"] = path[0]
+			self.context["uppaal"] = path
 			self.saveContext()
 
-		if not self.checkUPPAALfile(self.context["uppaal"]) :
+		if not Platform.checkUPPAALfile(self.context["uppaal"]) :
 			self.errorMessage("%s\n\nInvalid UPPAAL Executable."%self.context["uppaal"])
 			self.context["uppaal"] = None
 			self.saveContext()
@@ -518,7 +504,8 @@ class UTOPIIA(QMainWindow) :
 			toolchainCmakePath = os.path.join(platformResourcePath, "toolchain.cmake")
 			toolchainCmakeFile = open(toolchainCmakePath, 'r')
 			toolchainCmakeData = toolchainCmakeFile.read()
-			toolchainCmakeData = toolchainCmakeData%({"path" : (os.path.join(platformResourcePath, ""))})
+			toolchainCmakeData = toolchainCmakeData%({"path" : \
+				(os.path.join(platformResourcePath, "").replace("\\", "/"))})
 			toolchainCmakeFile.close()
 
 			# create toolchain cmake file
@@ -529,8 +516,8 @@ class UTOPIIA(QMainWindow) :
 
 		# setting up CMakeLists.txt file
 		cmakeBuild = {}
-		cmakeBuild["include"] = os.path.join(Paths.BuildResource, "include")
-		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib")
+		cmakeBuild["include"] = os.path.join(Paths.BuildResource, "include").replace("\\", "/")
+		cmakeBuild["libdir"] = os.path.join(platformResourcePath, "lib").replace("\\", "/")
 		libListFile = open(os.path.join(platformResourcePath, "liblist.txt"), "r")
 		libListData = libListFile.read()
 		libListFile.close()

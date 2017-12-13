@@ -378,6 +378,9 @@ class UTOPIIA(QMainWindow) :
 			self.project["model"] = os.path.join(self.project["path"], Paths.Model)
 			shutil.copy(tempPath, self.project["model"])
 
+		if self.project["config"] :
+			self.project["config"] = os.path.join(self.project["path"], Paths.SystemConfiguration)
+
 		if self.configurationEditor :
 			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
 

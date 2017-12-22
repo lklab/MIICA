@@ -420,7 +420,7 @@ static int check_and_take_normal_channel(Template* ref_task, Transition* ref_tra
 					else
 						invariant = program.tasks[k] -> current -> invariant;
 
-					if(invariant != NULL && !invariant(program.tasks[k], 0))
+					if(invariant != NULL && !invariant(program.tasks[k] -> context, 0))
 					{
 						invariant_result = 0;
 						break;

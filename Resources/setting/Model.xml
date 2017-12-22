@@ -1,19 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>// Place global declarations here.</declaration>
+	<declaration>// Place global declarations here.
+broadcast chan dataExchanged;
+const int PERIOD = 1;
+
+/* Declare I/O variables here */
+</declaration>
 	<template>
-		<name x="5" y="5">Template</name>
-		<declaration>// Place local declarations here.</declaration>
+		<name>PLCPlatform</name>
+		<declaration>clock tickClock;
+
+int exchangeData()
+{
+    /* Write the I/O variable exchange code here */
+
+    return 0;
+}
+
+int userPeriodicFunc()
+{
+    return 0;
+}
+</declaration>
+		<location id="id0" x="-340" y="-272">
+			<name x="-382" y="-255">ExchangeStep</name>
+			<committed/>
+		</location>
+		<location id="id1" x="-340" y="-357">
+			<name x="-365" y="-391">WaitStep</name>
+			<label kind="invariant" x="-323" y="-366">tickClock &lt;= PERIOD</label>
+		</location>
+		<init ref="id1"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-510" y="-357">tickClock &gt;= PERIOD</label>
+			<label kind="assignment" x="-510" y="-340">exchangeData(),
+tickClock = 0</label>
+			<nail x="-382" y="-315"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-297" y="-323">dataExchanged!</label>
+			<nail x="-297" y="-315"/>
+		</transition>
+	</template>
+	<template>
+		<name>Program</name>
+		<location id="id0" x="0" y="0">
+		</location>
+		<init ref="id0"/>
+	</template>
+	<template>
+		<name>Environment</name>
 		<location id="id0" x="0" y="0">
 		</location>
 		<init ref="id0"/>
 	</template>
 	<system>// Place template instantiations here.
-Process = Template();
+platform = PLCPlatform();
+
+program = Program();
+environment = Environment();
+
 // List one or more processes to be composed into a system.
-system Process;
-    </system>
+system platform, program, environment;
+</system>
 	<queries>
 	</queries>
 </nta>

@@ -9,6 +9,7 @@ typedef struct
 	os_proc_t proc;
 	unsigned long long period;
 	int alive;
+	void* data;
 } task_t;
 
 int os_task_init(task_t* task, os_proc_t proc, unsigned long long period);

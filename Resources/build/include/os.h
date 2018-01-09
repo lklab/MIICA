@@ -10,11 +10,11 @@ typedef struct
 	unsigned long long period;
 	int alive;
 	void* data;
-} task_t;
+} os_task_t;
 
-int os_task_init(task_t* task, os_proc_t proc, unsigned long long period);
-int os_task_start(task_t* task);
-int os_task_stop(task_t* task);
+int os_task_init(os_task_t* task, os_proc_t proc, unsigned long long period);
+int os_task_start(os_task_t* task);
+int os_task_stop(os_task_t* task);
 
 int os_signal(os_sig_t handler);
 void os_exit(int value);

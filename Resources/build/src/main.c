@@ -12,45 +12,49 @@ static void task_proc(void);
 static void interrupt_handler(void);
 static void cleanup_and_exit(int value);
 
-static task_t task;
+static os_task_t task;
+static int init_level = 0;
 
 int main(void)
 {
-	int i, ret;
+	int ret;
 
 	ret = io_init();
-	if(ret != 0)
-	{
-		io_cleanup();
-		os_exit(1);
-	}
+	if(ret != 0) cleanup_and_exit(ret);
+	init_level = 1;
 
-	for(i = 0; mapping_list[i].variable != NULL; i++)
-	{
-		ret = io_mapping(mapping_list[i].variable, mapping_list[i].size,
-			mapping_list[i].address, mapping_list[i].direction);
-		if(ret != 0)
-		{
-			io_cleanup();
-			os_exit(1);
-		}
-	}
+	ret = io_mapping(mapping_list, mapping_count);
+	if(ret != 0) cleanup_and_exit(ret);
 
-	uppaal_init();
-	os_signal(interrupt_handler);
+	ret = uppaal_init();
+	if(ret != 0) cleanup_and_exit(ret);
+	init_level = 2;
 
-	os_task_init(&task, task_proc, PERIOD);
-	os_task_start(&task);
+	ret = os_signal(interrupt_handler);
+	if(ret != 0) cleanup_and_exit(ret);
+
+	ret = os_task_init(&task, task_proc, PERIOD);
+	if(ret != 0) cleanup_and_exit(ret);
+	init_level = 3;
+
+	ret = io_activate(PERIOD);
+	if(ret != 0) cleanup_and_exit(ret);
+
+	ret = os_task_start(&task);
+	if(ret != 0) cleanup_and_exit(ret);
 
 	return 0;
 }
 
 static void task_proc(void)
 {
-	if(io_exchange() != 0)
-		cleanup_and_exit(1);
-	if(uppaal_step() != 0)
-		cleanup_and_exit(1);
+	int ret;
+
+	ret = io_exchange();
+	if(ret != 0) cleanup_and_exit(ret);
+
+	ret = uppaal_step();
+	if(ret != 0) cleanup_and_exit(ret);
 }
 
 static void interrupt_handler(void)
@@ -60,8 +64,8 @@ static void interrupt_handler(void)
 
 static void cleanup_and_exit(int value)
 {
-	os_task_stop(&task);
-	io_cleanup();
-	uppaal_cleanup();
+	if(init_level >= 3) os_task_stop(&task);
+	if(init_level >= 2) uppaal_cleanup();
+	if(init_level >= 1) io_cleanup();
 	os_exit(value);
 }

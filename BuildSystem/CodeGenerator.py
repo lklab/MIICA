@@ -11,20 +11,14 @@ def generateCode(system, configData) :
 #define _MODEL_H
 
 #include "uppaal_types.h"
-
-typedef struct MappingInfo
-{
-	void* variable;
-	int size;
-	char* address;
-	int direction;
-} MappingInfo;
+#include "io.h"
 
 int userPeriodicFunc();
 
 extern Program program;
 extern Channel* data_exchanged;
-extern MappingInfo mapping_list[];
+extern io_mapping_info_t mapping_list[];
+extern int mapping_count;
 
 #define PERIOD %(period)sLL
 
@@ -372,7 +366,7 @@ def generateProgramCode(system, taskList) :
 	return code
 
 def generateMappingCode(ioList) :
-	code = "MappingInfo mapping_list[] = {\n"
+	code = "io_mapping_info_t mapping_list[] = {\n"
 	for var in ioList :
 		code += "\t{&(program_context.var_" + var["varname"] + "), "
 		code += "sizeof(program_context.var_" + var["varname"] + "), "
@@ -381,7 +375,7 @@ def generateMappingCode(ioList) :
 			code += "0},\n"
 		elif var["direction"] == "In" :
 			code += "1},\n"
-	code += "\t{NULL, 0, NULL, -1}\n};\n"
+	code += "};\nint mapping_count = " + str(len(ioList)) + ";\n\n"
 	return code
 
 def generateProgramFunction(system, ioList) :

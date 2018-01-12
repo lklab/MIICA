@@ -524,9 +524,8 @@ static int check_guard(Template* task, Transition* transition)
 
 static int check_validation_for_next_period()
 {
-	int i, j;
+	int i;
 	Template* task;
-	Channel* channel;
 
 	for(i = 0; program.tasks[i] != NULL; i++)
 	{

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <nta>
+<!-- resource definitions sample
 	<platform arch="x86_64">
 		<os type="Linux">
 			<network>Standard I/O</network>
@@ -12,5 +13,8 @@
 			<network>Standard I/O</network>
 			<network>SOEM</network>
 		</os>
-	</platform>
+		<os type="Xenomai">
+			<network>IgH EtherCAT Master</network>
+		</os>
+	</platform> -->
 </nta>

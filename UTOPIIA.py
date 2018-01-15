@@ -370,6 +370,8 @@ class UTOPIIA(QMainWindow) :
 		if self.configurationEditor :
 			self.configurationEditor.setProjectPath(self.project["model"], self.project["config"])
 
+		self.project["build"] = None
+
 		if self.controllerManager :
 			self.controllerManager.setProjectPath(self.project["path"])
 

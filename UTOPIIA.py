@@ -152,6 +152,12 @@ class UTOPIIA(QMainWindow) :
 		self.project["saved"] = True
 		self.projectExplorer.setProject(self.project["name"])
 		self.closeAllTabs()
+		
+		try :
+			if not os.path.isdir(Paths.TempProjectRoot) :
+				os.mkdir(Paths.TempProjectRoot)
+		except :
+			return False
 
 	def initStatus(self) :
 		self.status["running uppaal"] = False

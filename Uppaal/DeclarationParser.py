@@ -1,5 +1,5 @@
 attributeKeywords = ["broadcast", "urgent", "const"]
-typeKeywords = ["int", "bool", "chan", "clock"]
+typeKeywords = ["int", "double", "bool", "chan", "clock"]
 doubleOperators = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", ">=", "<=", "==", "!=", "&&", "||", "++", "--"]
 singleOperators = ["=", "+", "-", "*", "/", "%", "&", "|", "^", ">", "<", "!", "(", ")", "{", "}", ",", ";"]
 

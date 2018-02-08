@@ -20,7 +20,7 @@ from UI.ControllerManager import *
 import Uppaal.UppaalProjectParser as UppaalProjectParser
 import BuildSystem.CodeGenerator as CodeGenerator
 
-class UTOPIIA(QMainWindow) :
+class MIICA(QMainWindow) :
 	def __init__(self) :
 		super().__init__()
 
@@ -128,7 +128,7 @@ class UTOPIIA(QMainWindow) :
 		self.setCentralWidget(horizontalSplitter)
 
 		# setting up window
-		self.setWindowTitle("UTOPIIA - Untitled Project")
+		self.setWindowTitle("MIICA - Untitled Project")
 		self.setGeometry(0, 0, 960, 540)
 		self.showMaximized()
 
@@ -142,7 +142,7 @@ class UTOPIIA(QMainWindow) :
 			self.context["uppaal"] = None
 
 	def initProject(self) :
-		self.setWindowTitle("UTOPIIA - Untitled Project")
+		self.setWindowTitle("MIICA - Untitled Project")
 		self.project["path"] = Paths.TempProjectRoot
 		self.project["permanent"] = False
 		self.project["name"] = "Untitled"
@@ -203,7 +203,7 @@ class UTOPIIA(QMainWindow) :
 				_project["config"] = os.path.join(path, Paths.SystemConfiguration)
 			if _project["build"] :
 				_project["build"] = os.path.join(path, "build")
-			self.setWindowTitle("UTOPIIA - " + _project["name"])
+			self.setWindowTitle("MIICA - " + _project["name"])
 		except :
 			self.errorMessage("%s\n\nInvalid Project File."%path)
 			return False
@@ -337,7 +337,7 @@ class UTOPIIA(QMainWindow) :
 			if not self.notSavedMessage(QMessageBox.No) :
 				return False
 
-		path = QFileDialog.getExistingDirectory(self, "Open UTOPIIA Project", "./")
+		path = QFileDialog.getExistingDirectory(self, "Open MIICA Project", "./")
 		if not path :
 			return False
 
@@ -357,13 +357,13 @@ class UTOPIIA(QMainWindow) :
 			self.informationMessage("Quit UPPAAL first.")
 			return False
 
-		path = QFileDialog.getExistingDirectory(self, "Save UTOPIIA Project", "./")
+		path = QFileDialog.getExistingDirectory(self, "Save MIICA Project", "./")
 		if not path :
 			return False
 
 		self.project["path"] = path
 		self.project["name"] = os.path.basename(path)
-		self.setWindowTitle("UTOPIIA - " + self.project["name"])
+		self.setWindowTitle("MIICA - " + self.project["name"])
 
 		if self.project["model"] :
 			tempPath = self.project["model"]
@@ -601,11 +601,11 @@ class UPPAALThread(QtCore.QThread) :
 
 	def __init__(self, parent) :
 		super().__init__(parent)
-		self.utopiia = parent
+		self.miica = parent
 		self.signal.connect(parent.uppaalTerminated)
 
 	def run(self) :
-		exitValue = os.system(Platform.uppaalCommand(self.utopiia.context["uppaal"], self.utopiia.project["model"]))
+		exitValue = os.system(Platform.uppaalCommand(self.miica.context["uppaal"], self.miica.project["model"]))
 		self.signal.emit(exitValue)
 
 class GenerateApplicationThread(QtCore.QThread) :
@@ -642,5 +642,5 @@ class GenerateApplicationThread(QtCore.QThread) :
 
 if __name__ == "__main__" :
 	app = QApplication(sys.argv)
-	utopiia = UTOPIIA()
+	miica = MIICA()
 	sys.exit(app.exec_())

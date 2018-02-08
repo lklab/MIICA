@@ -8,7 +8,7 @@ class Paths() :
 	
 	Icon = os.path.join(Resources, "icons")
 
-	Project = "project.utopiia"
+	Project = "project.miica"
 	Model = "Model.xml"
 	SystemConfiguration = "sysconfig.data"
 	ControllerData = "ctlmgr.data"

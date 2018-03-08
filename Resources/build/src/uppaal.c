@@ -161,13 +161,14 @@ static int take_valid_transition(Template* task)
 static int check_and_take_broadcast_channel(Template* send_task, Transition* send_transition)
 {
 	/* 
-	 * WARINING : Current code can behave differently from UPPAAL, when there
-	 * are two or more transitions that receive broadcast channels in the
-	 * current location of any task and the invariant results can vary
-	 * depending on which transition is selected.
+	 * WARINING : Current code may behave differently than UPPAAL.
+	 * This happens when there are two or more transitions receiving
+	 * broadcast channels at the current location, and the outcome of any
+	 * invariant in the system depends on which transition is selected.
 	 *
-	 * It is recommended to avoid receive broadcast channels for two or more
-	 * transitions that are not determined by guard at any location.
+	 * Avoid receiving the same broadcast channel for two or more
+	 * transitions where the execution condition is not exclusively
+	 * determined by the guard at any position.
 	 */
 
 	int i, j;

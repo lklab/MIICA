@@ -161,7 +161,7 @@ static int take_valid_transition(Template* task)
 static int check_and_take_broadcast_channel(Template* send_task, Transition* send_transition)
 {
 	/* 
-	 * WARINING : Current code may behave differently than UPPAAL.
+	 * WARNING : Current code may behave differently than UPPAAL.
 	 * This happens when there are two or more transitions receiving
 	 * broadcast channels at the current location, and the outcome of any
 	 * invariant in the system depends on which transition is selected.
@@ -283,17 +283,6 @@ static int check_and_take_broadcast_channel(Template* send_task, Transition* sen
 	}
 
 	return result;
-
-	/* dead code (2nd(final) step) : This works differently from UPPAAL */
-/*	for(i = 0; program.tasks[i] != NULL; i++)
-	{
-		task = program.tasks[i];
-		if(task -> ready)
-		{
-			if(check_invariant(task, task -> ready))
-				take_transition(task, task -> ready);
-		}
-	}*/
 }
 
 static int find_sending_broadcast_and_take(Template* receive_task, Transition* receive_transition)

@@ -342,7 +342,7 @@ def generateContextDeclaration(template, task) :
 	return code
 
 def generateProgramCode(system, taskList) :
-	code = "Template* task_list[] = {\n\t"
+	code = "Template* process_list[] = {\n\t"
 	for task in taskList :
 		code += "&" + task["codeName"] + ",\n\t"
 	code += "NULL\n};\n\n"
@@ -361,7 +361,7 @@ def generateProgramCode(system, taskList) :
 	code += "&program_context,\n\t"
 	code += "&program_context_backup,\n\t"
 	code += "sizeof(ProgramContext),\n\t"
-	code += "(Template**)&task_list,\n\t"
+	code += "(Template**)&process_list,\n\t"
 	code += "0LL\n};\n\n"
 	return code
 

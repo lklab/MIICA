@@ -35,7 +35,7 @@ struct Program
 	void* context_backup;
 	unsigned int context_size;
 
-	Template** tasks;
+	Template** process_list;
 	Clock program_clock;
 };
 

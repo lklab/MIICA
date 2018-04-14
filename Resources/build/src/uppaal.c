@@ -32,11 +32,20 @@ int uppaal_step(void)
 	if(!check_and_take_broadcast_channel(NULL, NULL))
 		return 1; /* deadlock condition */
 
+	/* 
+	 * Normal and urgent locations are semantically identical
+	 * according to the non-determinism implementation policy
+	 */
 	do
 	{
+		/* Process all committed locations first */
 		if(!committed_location_processing())
 			return 1; /* deadlock condition */
 	}
+	/*
+	 * If one of the processed processes exists,
+	 * the committed location is checked and processed again
+	 */
 	while(normal_location_processing());
 
 	if(!check_validation_for_next_period())
@@ -97,6 +106,13 @@ static int normal_location_processing()
 	return 0;
 }
 
+/*
+ * Take a valid transition of outgoing transitions
+ * of the current location for the current process
+ *
+ * Returns 1 if the transition has been taken
+ * Returns 0 if there is no taken transition since there are no valid transitions
+ */
 static int take_valid_transition(Template* process)
 {
 	int i;
@@ -115,6 +131,10 @@ static int take_valid_transition(Template* process)
 		{
 			switch(transition -> chan_in -> mode)
 			{
+				/* 
+				 * Normal and urgent channels are semantically identical
+				 * according to the non-determinism implementation policy
+				 */
 				case CHANNEL_NORMAL :
 				case CHANNEL_URGENT :
 					if(check_and_take_normal_channel(process, transition))
